@@ -12,20 +12,20 @@ lazy val core = Project(
 
     fork in Test := false,
 
-    libraryDependencies += Dependencies.reactiveStreamsDep,
+    libraryDependencies += Dependencies.akkaStreamDep      % Optional,
+    libraryDependencies += Dependencies.catsDep            % Optional,
+    libraryDependencies += Dependencies.catsIterateeDep    % Optional,
+    libraryDependencies += Dependencies.fs2CoreDep         % Optional,
+    libraryDependencies += Dependencies.playIterateeDep    % Optional,
+    libraryDependencies += Dependencies.reactiveStreamsDep % Optional,
 
-    libraryDependencies += Dependencies.akkaStreamDep   % Optional,
-    libraryDependencies += Dependencies.catsDep         % Optional,
-    libraryDependencies += Dependencies.catsIterateeDep % Optional,
-    libraryDependencies += Dependencies.fs2CoreDep      % Optional,
-    libraryDependencies += Dependencies.playIterateeDep % Optional,
-
-    libraryDependencies += Dependencies.catsDep         % Test,
-    libraryDependencies += Dependencies.catsIterateeDep % Test,
-    libraryDependencies += Dependencies.fs2CoreDep      % Test,
-    libraryDependencies += Dependencies.nScalaTimeDep   % Test,
-    libraryDependencies += Dependencies.playIterateeDep % Test,
-    libraryDependencies += Dependencies.specs2Dep       % Test,
+    libraryDependencies += Dependencies.catsDep            % Test,
+    libraryDependencies += Dependencies.catsIterateeDep    % Test,
+    libraryDependencies += Dependencies.fs2CoreDep         % Test,
+    libraryDependencies += Dependencies.nScalaTimeDep      % Test,
+    libraryDependencies += Dependencies.playIterateeDep    % Test,
+    libraryDependencies += Dependencies.specs2Dep          % Test,
+    libraryDependencies += Dependencies.reactiveStreamsDep % Test,
 
     homepage := BuildSettings.streamadapterHomepage,
     pomExtra := BuildSettings.streamadapterPomExtra
