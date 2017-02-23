@@ -13,7 +13,7 @@ package object akka {
   /** produces a publisher adapter from iterator generator to akka source */
   implicit val iterGenToAkkaSource = {
     new PublisherAdapter[IterGen, AkkaSource] {
-      def adaptPublisher[A](iterGen: IterGen[A]): Source[A, NotUsed] = {
+      def adapt[A](iterGen: IterGen[A]): Source[A, NotUsed] = {
         Source.unfoldResource[A, CloseableIter[A]](
           iterGen,
           iterator => if (iterator.hasNext) Some(iterator.next) else None,
@@ -26,7 +26,7 @@ package object akka {
   /** produces a publisher adapter from akka source to iterator generator */
   implicit def akkaSourceToIterGen = {
     new PublisherAdapter[AkkaSource, IterGen] {
-      def adaptPublisher[A](akkaSource: Source[A, NotUsed]): IterGen[A] = { () =>
+      def adapt[A](akkaSource: Source[A, NotUsed]): IterGen[A] = { () =>
         new Iterator[A] with Closeable {
           def hasNext = ???
           def next    = ???

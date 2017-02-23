@@ -1,16 +1,17 @@
-package streamadapter
+package streamadapter.fromIter
 
 import java.io.Closeable
 import java.lang.InterruptedException
 import org.joda.time.DateTime
 import org.specs2.Specification
+import streamadapter.IterGen
 
 /** @tparam P the type of the publisher to convert to */
 abstract class FromIterGenSpec[P[_]] extends Specification {
   
   def adapterName: String
 
-  def adaptPublisher: IterGen[Int] => P[Int]
+  def adapt: IterGen[Int] => P[Int]
 
   def toIterator: P[Int] => Iterator[Int]
 
@@ -72,27 +73,27 @@ $takeThreeFragment"""
 
   def blockingIterGen = new BlockingIIGen
 
-  def sameElts = toIterator(adaptPublisher(iterGen)) must beEqualTo(elements)
+  def sameElts = toIterator(adapt(iterGen)) must beEqualTo(elements)
 
   def doesntBlock = {
     val start = DateTime.now.getMillis
-    val in = adaptPublisher(blockingIterGen)
+    val in = adapt(blockingIterGen)
     val end = DateTime.now.getMillis
     (end - start) must beLessThan(1000L)
   }
 
   def reproducible: org.specs2.execute.Result = {
-    val u = adaptPublisher(iterGen)
+    val u = adapt(iterGen)
     toIterator(u).toList must beEqualTo(toIterator(u).toList)
   }
 
   def threeElts(takeThree: (P[Int]) => P[Int]) = {
-    toIterator(takeThree(adaptPublisher(iterGen))) must beEqualTo(elements.take(3))
+    toIterator(takeThree(adapt(iterGen))) must beEqualTo(elements.take(3))
   }
 
   def closesEarly(takeThree: (P[Int]) => P[Int]) = {
     val iGen = iterGen
-    toIterator(takeThree(adaptPublisher(iGen)))
+    toIterator(takeThree(adapt(iGen)))
 
     { iGen.closedIndexes.size must beEqualTo(1)
     } and {

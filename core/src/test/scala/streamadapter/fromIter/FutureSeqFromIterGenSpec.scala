@@ -1,4 +1,4 @@
-package streamadapter
+package streamadapter.fromIter
 
 import scala.concurrent.Await
 import scala.concurrent.Future
@@ -16,7 +16,7 @@ class FutureSeqFromIterGenSpec extends FromIterGenSpec[FutureSeqFromIterGenSpec.
 
   def adapterName = "iterGenToFutureSeq"
 
-  def adaptPublisher = iterGenToFutureSeq.adaptPublisher[Int] _
+  def adapt = iterGenToFutureSeq.adapt[Int] _
 
   def toIterator: Future[Seq[Int]] => Iterator[Int] = (fs) => Await.result(fs, Duration.Inf).toIterator
 

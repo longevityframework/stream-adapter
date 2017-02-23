@@ -19,7 +19,7 @@ package object play {
   /** produces a publisher adapter from iterator generator to akka source */
   implicit def iterGenToPlayEnumerator(implicit context: ExecutionContext) = {
     new PublisherAdapter[IterGen, Enumerator] {
-      def adaptPublisher[A](iterGen: IterGen[A]): Enumerator[A] = {
+      def adapt[A](iterGen: IterGen[A]): Enumerator[A] = {
         new Enumerator[A] {
           def apply[B](iteratee: Iteratee[A, B]): Future[Iteratee[A, B]] = {
             val iterator = iterGen()
@@ -59,7 +59,7 @@ package object play {
   /** produces a publisher adapter from akka source to iterator generator */
   implicit def playEnumeratorToIterGen = {
     new PublisherAdapter[Enumerator, IterGen] {
-      def adaptPublisher[A](enumerator: Enumerator[A]): IterGen[A] = { () =>
+      def adapt[A](enumerator: Enumerator[A]): IterGen[A] = { () =>
         new Iterator[A] with Closeable {
           def hasNext = ???
           def next    = ???

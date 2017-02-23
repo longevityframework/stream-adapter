@@ -23,7 +23,7 @@ package object cats {
   class IterGenToCatsEnumerator[F[_]](F: Monad[F]) {
     type CatsEnumerator[A] = Enumerator[F, A]
     val adapter = new PublisherAdapter[IterGen, CatsEnumerator] {
-      def adaptPublisher[E](iterGen: IterGen[E]): Enumerator[F, E] = {
+      def adapt[E](iterGen: IterGen[E]): Enumerator[F, E] = {
         new Enumerator[F, E] {
           final def apply[A](step: Step[F, E, A]): F[Step[F, E, A]] = {
             val iterator = iterGen()
@@ -55,7 +55,7 @@ package object cats {
     type CatsEnumerator[A] = Enumerator[F, A]
     // TODO
     val adapter = new PublisherAdapter[CatsEnumerator, IterGen] {
-      def adaptPublisher[A](enumerator: Enumerator[F, A]): IterGen[A] = { () =>
+      def adapt[A](enumerator: Enumerator[F, A]): IterGen[A] = { () =>
         new Iterator[A] with Closeable {
           def hasNext = ???
           def next    = ???

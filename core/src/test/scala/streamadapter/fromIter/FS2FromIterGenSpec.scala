@@ -1,4 +1,4 @@
-package streamadapter
+package streamadapter.fromIter
 
 import _root_.fs2.Stream
 import _root_.fs2.Task
@@ -16,7 +16,7 @@ class FS2FromIterGenSpec extends FromIterGenSpec[S] {
 
   def adapterName = "iterGenToFS2Stream"
 
-  def adaptPublisher = iterGenToFS2Stream.adaptPublisher
+  def adapt = iterGenToFS2Stream.adapt
 
   def toIterator: S[Int] => Iterator[Int] = _.runLog.unsafeRun().toIterator
 

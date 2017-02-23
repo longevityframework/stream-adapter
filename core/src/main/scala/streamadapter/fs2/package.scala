@@ -12,7 +12,7 @@ package object fs2 {
   /** produces a publisher adapter from iterator generator to FS2 stream */
   implicit def iterGenToFS2Stream = {
     new PublisherAdapter[IterGen, FS2Stream] {
-      def adaptPublisher[A](iterGen: IterGen[A]): Stream[Task, A] = {
+      def adapt[A](iterGen: IterGen[A]): Stream[Task, A] = {
         def iteratorToStream(i: Iterator[A]): Stream[Task, A] = {
           if (i.hasNext) {
             // TODO: implement chunking here
@@ -33,7 +33,7 @@ package object fs2 {
   /** produces a publisher adapter from FS2 stream to iterator generator */
   implicit def fs2StreamToIterGen = {
     new PublisherAdapter[FS2Stream, IterGen] {
-      def adaptPublisher[A](stream: Stream[Task, A]): IterGen[A] = { () =>
+      def adapt[A](stream: Stream[Task, A]): IterGen[A] = { () =>
         new Iterator[A] with Closeable {
           def hasNext = ???
           def next    = ???

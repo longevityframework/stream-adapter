@@ -1,4 +1,4 @@
-package streamadapter
+package streamadapter.fromIter
 
 import _root_.cats.Eval
 import io.iteratee.Enumerator
@@ -18,7 +18,7 @@ class CatsFromIterGenSpec extends FromIterGenSpec[CatsEnumerator] {
 
   def adapterName = "iterGenToCatsEnumerator"
 
-  def adaptPublisher = iterGenToCatsEnumerator[Eval].adaptPublisher[Int]
+  def adapt = iterGenToCatsEnumerator[Eval].adapt[Int]
 
   def toIterator: CatsEnumerator[Int] => Iterator[Int] = { (enumerator) =>
     val builder = ArrayBuffer.newBuilder[Int]

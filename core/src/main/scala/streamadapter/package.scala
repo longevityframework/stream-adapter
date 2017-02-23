@@ -28,9 +28,9 @@ package object streamadapter {
   type IterGen[+A] = () => CloseableIter[A]
 
   /** TODO */
-  def adaptPublisher[P1[_], P2[_], A](
+  def adapt0[P1[_], P2[_], A](
     p1: P1[A])(
     implicit publisherAdapter: PublisherAdapter[P1, P2]): P2[A] =
-    publisherAdapter.adaptPublisher(p1)
+    publisherAdapter.adapt(p1)
 
 }

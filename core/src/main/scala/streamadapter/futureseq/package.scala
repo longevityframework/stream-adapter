@@ -16,7 +16,7 @@ package object futureseq {
   /** produces a publisher adapter from iterator generator to future sequence */
   implicit def iterGenToFutureSeq(implicit context: ExecutionContext) = {
     new PublisherAdapter[IterGen, FutureSeq] {
-      def adaptPublisher[A](iterGen: IterGen[A]): Future[Seq[A]] = {
+      def adapt[A](iterGen: IterGen[A]): Future[Seq[A]] = {
         Future(blocking(iterGen().toSeq))
       }
     }
@@ -25,7 +25,7 @@ package object futureseq {
   /** produces a publisher adapter from future sequence to iterator generator */
   implicit def futureSeqToIterGen(implicit context: ExecutionContext) = {
     new PublisherAdapter[FutureSeq, IterGen] {
-      def adaptPublisher[A](futureSeq: Future[Seq[A]]): IterGen[A] = { () =>
+      def adapt[A](futureSeq: Future[Seq[A]]): IterGen[A] = { () =>
         new Iterator[A] with Closeable {
           private lazy val i = Await.result(futureSeq, Duration.Inf).toIterator
           def hasNext = i.hasNext

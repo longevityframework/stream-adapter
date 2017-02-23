@@ -1,4 +1,4 @@
-package streamadapter
+package streamadapter.fromIter
 
 import _root_.akka.NotUsed
 import _root_.akka.actor.ActorSystem
@@ -26,7 +26,7 @@ class AkkaFromIterGenSpec extends FromIterGenSpec[AkkaSource] {
 
   def adapterName = "iterGenToAkkaSource"
 
-  def adaptPublisher = iterGenToAkkaSource.adaptPublisher[Int]
+  def adapt = iterGenToAkkaSource.adapt[Int]
 
   def toIterator: AkkaSource[Int] => Iterator[Int] = (as) => {
     val f = as.toMat(Sink.seq[Int])(Keep.right).run().map(_.toIterator)

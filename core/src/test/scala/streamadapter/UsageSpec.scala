@@ -9,7 +9,7 @@ import org.specs2.Specification
 class UsageSpec extends Specification {
 
   def is = s2"""
-streamadapter.adaptPublisher should
+streamadapter.adapt should
   adapt an iter gen to a future seq painlessly     $toFutureSeq
   adapt an iter gen to an akka source painlessly   $toAkkaSource
   adapt an iter gen to a cats enumerator painlessly   $toAkkaSource
@@ -28,9 +28,10 @@ streamadapter.adaptPublisher should
 
   def toFutureSeq = {
     import scala.concurrent.ExecutionContext.Implicits.global
+    import scala.concurrent.Future
     import streamadapter._
     import streamadapter.futureseq._
-    val futureSeq = adaptPublisher[IterGen, FutureSeq, Int](iterGen)
+    val futureSeq: Future[Seq[Int]] = adapt0[IterGen, FutureSeq, Int](iterGen)
 
     import scala.concurrent.Await
     import scala.concurrent.duration.Duration
@@ -41,14 +42,18 @@ streamadapter.adaptPublisher should
   def toAkkaSource = {
     import streamadapter._
     import streamadapter.akka._
-    val source: AkkaSource[Int] = adaptPublisher[IterGen, AkkaSource, Int](iterGen)
+    val source: AkkaSource[Int] = adapt0[IterGen, AkkaSource, Int](iterGen)
     success
   }
 
   def toCatsEnum = {
     import streamadapter._
     import streamadapter.cats._
-    val enum: EvalEnumerator[Int] = adaptPublisher[IterGen, EvalEnumerator, Int](iterGen)
+    val enum: EvalEnumerator[Int] = adapt0[IterGen, EvalEnumerator, Int](iterGen)
+
+    // get the publisher like so
+    val adapter = implicitly[PublisherAdapter[IterGen, EvalEnumerator]]
+
     success
   }
 

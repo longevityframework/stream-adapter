@@ -1,4 +1,4 @@
-package streamadapter
+package streamadapter.fromIter
 
 import _root_.play.api.libs.iteratee.Enumeratee
 import _root_.play.api.libs.iteratee.Enumerator
@@ -12,7 +12,7 @@ class PlayFromIterGenSpec extends FromIterGenSpec[Enumerator] {
 
   def adapterName = "iterGenToPlayEnumerator"
 
-  def adaptPublisher = iterGenToPlayEnumerator.adaptPublisher
+  def adapt = iterGenToPlayEnumerator.adapt
 
   def toIterator: Enumerator[Int] => Iterator[Int] = { (enumerator) =>
     val iteratee = Iteratee.fold[Int, Seq[Int]](Seq()) { case (acc, int) =>
