@@ -11,11 +11,11 @@ import scala.concurrent.duration.Duration
 package object futureseq {
 
   /** TODO */
-  type EffectiveFutureSeq[F[_], A] = Future[Seq[A]]
+  type FutureSeq[A] = Future[Seq[A]]
 
   /** produces a publisher adapter from iterator generator to future sequence */
   implicit def iterGenToFutureSeq(implicit context: ExecutionContext) = {
-    new PublisherAdapter[NoEffect, EffectiveIterGen, NoEffect, EffectiveFutureSeq] {
+    new PublisherAdapter[IterGen, FutureSeq] {
       def adaptPublisher[A](iterGen: IterGen[A]): Future[Seq[A]] = {
         Future(blocking(iterGen().toSeq))
       }
@@ -24,7 +24,7 @@ package object futureseq {
 
   /** produces a publisher adapter from future sequence to iterator generator */
   implicit def futureSeqToIterGen(implicit context: ExecutionContext) = {
-    new PublisherAdapter[NoEffect, EffectiveFutureSeq, NoEffect, EffectiveIterGen] {
+    new PublisherAdapter[FutureSeq, IterGen] {
       def adaptPublisher[A](futureSeq: Future[Seq[A]]): IterGen[A] = { () =>
         new Iterator[A] with Closeable {
           private lazy val i = Await.result(futureSeq, Duration.Inf).toIterator

@@ -8,11 +8,11 @@ import java.io.Closeable
 package object akka {
 
   /** TODO */
-  type EffectiveSource[F[_], A] = Source[A, NotUsed]
+  type AkkaSource[A] = Source[A, NotUsed]
 
   /** produces a publisher adapter from iterator generator to akka source */
   implicit val iterGenToAkkaSource = {
-    new PublisherAdapter[NoEffect, EffectiveIterGen, NoEffect, EffectiveSource] {
+    new PublisherAdapter[IterGen, AkkaSource] {
       def adaptPublisher[A](iterGen: IterGen[A]): Source[A, NotUsed] = {
         Source.unfoldResource[A, CloseableIter[A]](
           iterGen,
@@ -25,7 +25,7 @@ package object akka {
   // TODO
   /** produces a publisher adapter from akka source to iterator generator */
   implicit def akkaSourceToIterGen = {
-    new PublisherAdapter[NoEffect, EffectiveSource, NoEffect, EffectiveIterGen] {
+    new PublisherAdapter[AkkaSource, IterGen] {
       def adaptPublisher[A](akkaSource: Source[A, NotUsed]): IterGen[A] = { () =>
         new Iterator[A] with Closeable {
           def hasNext = ???

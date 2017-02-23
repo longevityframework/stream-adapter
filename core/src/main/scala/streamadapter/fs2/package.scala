@@ -7,10 +7,11 @@ import java.io.Closeable
 package object fs2 {
 
   // TODO either generalize away from Task, or try to include some Pure or something
+  type FS2Stream[A] = Stream[Task, A]
 
   /** produces a publisher adapter from iterator generator to FS2 stream */
   implicit def iterGenToFS2Stream = {
-    new PublisherAdapter[NoEffect, EffectiveIterGen, Task, Stream] {
+    new PublisherAdapter[IterGen, FS2Stream] {
       def adaptPublisher[A](iterGen: IterGen[A]): Stream[Task, A] = {
         def iteratorToStream(i: Iterator[A]): Stream[Task, A] = {
           if (i.hasNext) {
@@ -31,7 +32,7 @@ package object fs2 {
   // TODO
   /** produces a publisher adapter from FS2 stream to iterator generator */
   implicit def fs2StreamToIterGen = {
-    new PublisherAdapter[Task, Stream, NoEffect, EffectiveIterGen] {
+    new PublisherAdapter[FS2Stream, IterGen] {
       def adaptPublisher[A](stream: Stream[Task, A]): IterGen[A] = { () =>
         new Iterator[A] with Closeable {
           def hasNext = ???

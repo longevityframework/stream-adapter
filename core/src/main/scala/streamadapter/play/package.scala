@@ -18,7 +18,7 @@ package object play {
 
   /** produces a publisher adapter from iterator generator to akka source */
   implicit def iterGenToPlayEnumerator(implicit context: ExecutionContext) = {
-    new PublisherAdapter[NoEffect, EffectiveIterGen, NoEffect, EffectiveEnumerator] {
+    new PublisherAdapter[IterGen, Enumerator] {
       def adaptPublisher[A](iterGen: IterGen[A]): Enumerator[A] = {
         new Enumerator[A] {
           def apply[B](iteratee: Iteratee[A, B]): Future[Iteratee[A, B]] = {
@@ -58,7 +58,7 @@ package object play {
   // TODO
   /** produces a publisher adapter from akka source to iterator generator */
   implicit def playEnumeratorToIterGen = {
-    new PublisherAdapter[NoEffect, EffectiveEnumerator, NoEffect, EffectiveIterGen] {
+    new PublisherAdapter[Enumerator, IterGen] {
       def adaptPublisher[A](enumerator: Enumerator[A]): IterGen[A] = { () =>
         new Iterator[A] with Closeable {
           def hasNext = ???

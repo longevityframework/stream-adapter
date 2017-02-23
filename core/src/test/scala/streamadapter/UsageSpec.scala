@@ -25,21 +25,22 @@ streamadapter.adaptPublisher should
 
   // first test with no PublisherAndEffect
   def toFutureSeq = {
-    import scala.concurrent.ExecutionContext.Implicits.global
-    import streamadapter._
-    import streamadapter.futureseq._
-    import scala.concurrent.Await
-    import scala.concurrent.duration.Duration
-    val futureSeq = adaptPublisher[NoEffect, EffectiveIterGen, NoEffect, EffectiveFutureSeq, Int](iterGen)
-    val seq = Await.result(futureSeq, Duration.Inf)
-    seq must beEqualTo (iterGenSeq)
+    // import scala.concurrent.ExecutionContext.Implicits.global
+    // import streamadapter._
+    // import streamadapter.futureseq._
+    // import scala.concurrent.Await
+    // import scala.concurrent.duration.Duration
+    // val futureSeq = adaptPublisher[NoEffect, EffectiveIterGen, NoEffect, EffectiveFutureSeq, Int](iterGen)
+    // val seq = Await.result(futureSeq, Duration.Inf)
+    // seq must beEqualTo (iterGenSeq)
+    pending
   }
 
   // first test with no PublisherAndEffect
   def toAkkaSource = {
-    import streamadapter._
-    import streamadapter.akka._
-    val source = adaptPublisher[NoEffect, EffectiveIterGen, NoEffect, EffectiveSource, Int](iterGen)
+    // import streamadapter._
+    // import streamadapter.akka._
+    // val source = adaptPublisher[NoEffect, EffectiveIterGen, NoEffect, EffectiveSource, Int](iterGen)
     0 must beEqualTo(0)
   }
 
