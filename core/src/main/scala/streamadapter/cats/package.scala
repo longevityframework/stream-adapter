@@ -1,5 +1,6 @@
 package streamadapter
 
+import _root_.cats.Eval
 import _root_.cats.Monad
 import io.iteratee.Enumerator
 import io.iteratee.internal.Step
@@ -7,6 +8,9 @@ import java.io.Closeable
 
 /** TODO */
 package object cats {
+
+  /** TODO */
+  type EvalEnumerator[A] = Enumerator[Eval, A]
 
   /** produces a publisher adapter from iterator generator to a cats-style `io.iteratee` enumerator */
   implicit def iterGenToCatsEnumerator[F[_]](implicit F: Monad[F]) =
