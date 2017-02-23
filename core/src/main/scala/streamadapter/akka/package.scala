@@ -11,7 +11,7 @@ package object akka {
   type EffectiveSource[F[_], A] = Source[A, NotUsed]
 
   /** produces a publisher adapter from iterator generator to akka source */
-  implicit def iterGenToAkkaSource = {
+  implicit val iterGenToAkkaSource = {
     new PublisherAdapter[NoEffect, EffectiveIterGen, NoEffect, EffectiveSource] {
       def adaptPublisher[A](iterGen: IterGen[A]): Source[A, NotUsed] = {
         Source.unfoldResource[A, CloseableIter[A]](
