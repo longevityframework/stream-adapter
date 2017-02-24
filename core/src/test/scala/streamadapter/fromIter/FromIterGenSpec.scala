@@ -19,15 +19,15 @@ abstract class FromIterGenSpec[P[_]] extends Specification {
 
   def is = s2"""
 $adapterName should
-  produce the same elements as the supplied iterator            $sameElts
+  produce the same elements as the original iterator            $sameElts
   produce a result immediately, even if the iterator blocks     $doesntBlock
   produce the same result when run twice                        $reproducible
 $takeThreeFragment"""
 
   def takeThreeFragment = takeThreeOpt match {
     case Some(takeThree) => s2"""
-  produce an abbreviated result if the producer is closed early ${threeElts(takeThree)}
-  close the iterator if the producer is closed early            ${closesEarly(takeThree)}
+  produce an abbreviated result if the publisher is closed early ${threeElts(takeThree)}
+  close the iterator if the publisher is closed early            ${closesEarly(takeThree)}
 """
     case None => s2"""
 """
@@ -82,7 +82,7 @@ $takeThreeFragment"""
     (end - start) must beLessThan(1000L)
   }
 
-  def reproducible: org.specs2.execute.Result = {
+  def reproducible = {
     val u = adapt(iterGen)
     toIterator(u).toList must beEqualTo(toIterator(u).toList)
   }
