@@ -1,13 +1,12 @@
 package streamadapter.toIter
 
-// import java.io.Closeable
 import org.joda.time.DateTime
 import org.specs2.Specification
 import streamadapter.IterGen
 
 /** @tparam P the type of the publisher to convert from */
 abstract class ToIterGenSpec[P[_]] extends Specification {
-  
+
   def adapterName: String
 
   // its important that this method only takes what it needs from the incoming seq
@@ -64,7 +63,7 @@ $closesEarlyFragment"""
       viewCounts += i -> (viewCounts.getOrElse(i, 0) + 1)
       elts.apply(i)
     }
-    def iterator = throw new UnsupportedOperationException("you aren't supposed to use iterator method, just apply")
+    def iterator = throw new UnsupportedOperationException("you aren't supposed to use iterator method in this test framework, just apply")
     def length = elts.length
   }
   

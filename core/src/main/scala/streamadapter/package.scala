@@ -1,4 +1,6 @@
 import java.io.Closeable
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 /** TODO */
 package object streamadapter {
@@ -32,5 +34,8 @@ package object streamadapter {
     p1: P1[A])(
     implicit publisherAdapter: PublisherAdapter[P1, P2]): P2[A] =
     publisherAdapter.adapt(p1)
+
+  private[streamadapter] def trampoline[A](f: => Future[A])(implicit context: ExecutionContext): Future[A] =
+    Future(()).flatMap { _ => f }
 
 }
