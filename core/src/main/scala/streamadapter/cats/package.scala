@@ -1,8 +1,11 @@
 package streamadapter
 
 import _root_.cats.Eval
+import _root_.cats.Id
 import _root_.cats.Monad
+import _root_.cats.Bimonad
 import io.iteratee.Enumerator
+import io.iteratee.Iteratee
 import io.iteratee.internal.Step
 import java.io.Closeable
 
@@ -10,7 +13,10 @@ import java.io.Closeable
 package object cats {
 
   /** TODO */
-  type EvalEnumerator[A] = Enumerator[Eval, A]
+  type EvalEnumerator[E] = Enumerator[Eval, E]
+
+  /** TODO */
+  type IdEnumerator[E] = Enumerator[Id, E]
 
   /** produces a publisher adapter from iterator generator to a cats-style `io.iteratee` enumerator */
   implicit def iterGenToCatsEnumerator[F[_]](implicit F: Monad[F]) =
@@ -21,7 +27,7 @@ package object cats {
    * the type returned by the adapter with the expected type.
    */
   class IterGenToCatsEnumerator[F[_]](F: Monad[F]) {
-    type CatsEnumerator[A] = Enumerator[F, A]
+    type CatsEnumerator[E] = Enumerator[F, E]
     val adapter = new PublisherAdapter[IterGen, CatsEnumerator] {
       def adapt[E](iterGen: IterGen[E]): Enumerator[F, E] = {
         new Enumerator[F, E] {
@@ -43,23 +49,36 @@ package object cats {
     }
   }
 
-  /** produces a publisher adapter from a cats-style `io.iteratee` enumerator to iterator generator */
-  implicit def catsEnumeratorToIterGen[F[_]](implicit F: Monad[F]) =
-    new CatsEnumeratorToIterGen(F).adapter
+  /** produces a publisher adapter from a cats-style `io.iteratee` enumerator to iterator generator
+   * TODO params
+   */
+  implicit def catsEnumeratorToIterGen[F[_]](implicit F: Bimonad[F]) =
+    new CatsEnumeratorToIterGen()(F).adapter
 
   /** contains an adapter wrapped with the type we are adapting from. exposing the `CatsEnumerator` type
    * within this class in a non-anonymous way helps resolve some problems the compiler has equating
    * the type returned by the adapter with the expected type.
+   * TODO params
    */
-  class CatsEnumeratorToIterGen[F[_]](F: Monad[F]) {
-    type CatsEnumerator[A] = Enumerator[F, A]
-    // TODO
+  class CatsEnumeratorToIterGen[F[_]](implicit F: Bimonad[F]) {
+    type CatsEnumerator[E] = Enumerator[F, E]
     val adapter = new PublisherAdapter[CatsEnumerator, IterGen] {
-      def adapt[A](enumerator: Enumerator[F, A]): IterGen[A] = { () =>
-        new Iterator[A] with Closeable {
-          def hasNext = ???
-          def next    = ???
-          def close   = ???
+      def adapt[E](enumerator: Enumerator[F, E]): IterGen[E] = { () =>
+        var enum = enumerator
+        new Iterator[E] with Closeable {
+          def hasNext = {
+            println("hasNext")
+            !F.extract(Iteratee.isEnd[F, E](F)(enum).run)
+          }
+          def next = {
+            println("next")
+            val e = F.extract(Iteratee.head[F, E](F)(enum).run).get
+            enum = enum.drop(1)
+            e
+          }
+          def close = {
+            Iteratee.done[F, E, Unit](())(F)(enum).run
+          }
         }
       }
     }
