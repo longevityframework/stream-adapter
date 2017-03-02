@@ -60,10 +60,20 @@ package object cats {
    * the type returned by the adapter with the expected type.
    * TODO params
    */
+  // QUESTION: it seems that i really need Bimonad here and not just Monad. because i need to
+  // call F.extract on the iteratee to get it to "run". does that make sense to you?
   class CatsEnumeratorToIterGen[F[_]](implicit F: Bimonad[F]) {
     type CatsEnumerator[E] = Enumerator[F, E]
     val adapter = new PublisherAdapter[CatsEnumerator, IterGen] {
       def adapt[E](enumerator: Enumerator[F, E]): IterGen[E] = { () =>
+
+        // QUESTION: is there some way that i can do this without the promises? i have a version
+        // that works, but performs terribly, that only defines an Iterator with Closeable, and uses
+        // methods in the Iteratee companion object to drive it, here:
+        //
+        // https://github.com/longevityframework/stream-adapter/blob/exp/cats-to-iter-f-extract/core/src/main/scala/streamadapter/cats/package.scala#L63
+        //
+        // is there some way i can rework this alternate version so it performs?
 
         // TODO can i do this without promises?
         import scala.concurrent.Await
@@ -113,13 +123,19 @@ package object cats {
           })
 
         // TODO get rid of future
+
+        // QUESTION: i would really prefer to not use a future here, but it seems necessary that i
+        // spawn off a second thread in this scenario. I really want to try to limit the
+        // dependencies needed to make this converter work to just cats and iteratee.io, but it
+        // seems neither provides a Task. is there a better option that brings in maybe a tiny
+        // dependency? i am thinking that i would prefer to use Future over bringing in any extra
+        // dependency. what do you think?
         import scala.concurrent.Future
         import scala.concurrent.ExecutionContext.Implicits.global
-        Future {
-          F.extract(
-            iteratee(enumerator).run
-          )
-        }
+        import scala.concurrent.blocking
+        Future(blocking(
+          F.extract(iteratee(enumerator).run)
+        ))
         iterator
       }
     }
