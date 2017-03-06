@@ -1,6 +1,6 @@
 package streamadapter.fromIter
 
-import java.io.Closeable
+import streamadapter.CloseableIter
 import java.lang.InterruptedException
 import org.joda.time.DateTime
 import org.specs2.Specification
@@ -39,7 +39,7 @@ $takeThreeFragment"""
   class IIGen extends IterGen[Int] {
     var index = 0
     var closedIndexes: Seq[Int] = Seq()
-    class II extends Iterator[Int] with Closeable {
+    class II extends CloseableIter[Int] {
       val i = elements.iterator
       def hasNext: Boolean = i.hasNext
       def next(): Int = {
@@ -73,7 +73,7 @@ $takeThreeFragment"""
   class ThrowingIGenException extends RuntimeException
 
   class ThrowingIGen extends IterGen[Int] {
-    class TI extends Iterator[Int] with Closeable {
+    class TI extends CloseableIter[Int] {
       val i = elements.iterator
       var index = 0
       def hasNext: Boolean = {

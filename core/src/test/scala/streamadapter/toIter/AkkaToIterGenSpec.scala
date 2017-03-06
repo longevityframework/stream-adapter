@@ -1,8 +1,8 @@
 package streamadapter.toIter
 
-import java.io.Closeable
 import _root_.akka.actor.ActorSystem
 import _root_.akka.stream.ActorMaterializer
+import streamadapter.CloseableIter
 import streamadapter.akka.AkkaSource
 import streamadapter.akka.akkaSourceToIterGen
 import streamadapter.akka.iterGenToAkkaSource
@@ -22,7 +22,7 @@ class AkkaToIterGenSpec extends ToIterGenSpec[AkkaSource] {
   def adapt = akkaSourceToIterGen.adapt[Int] _
 
   def create = (sequence: Seq[Int]) => {
-    def iter = new Iterator[Int] with Closeable {
+    def iter = new CloseableIter[Int] {
       var i = 0
       def hasNext = i < sequence.size
       def next = {
@@ -36,7 +36,7 @@ class AkkaToIterGenSpec extends ToIterGenSpec[AkkaSource] {
   }
 
   def createBlocking = (sequence: Seq[Int]) => {
-    def iter = new Iterator[Int] with Closeable {
+    def iter = new CloseableIter[Int] {
       private val i = sequence.toIterator
       def hasNext = {
         try Thread.sleep(1000) catch { case t: InterruptedException => }

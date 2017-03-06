@@ -7,7 +7,6 @@ import _root_.play.api.libs.iteratee.Step
 import _root_.play.api.libs.iteratee.Step.Cont
 import _root_.play.api.libs.iteratee.Step.Done
 import _root_.play.api.libs.iteratee.Step.Error
-import java.io.Closeable
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -75,7 +74,7 @@ package object play {
         consumed.success(Some(()))
 
         // the consumer
-        val iterator = new Iterator[A] with Closeable {
+        val iterator = new CloseableIter[A] {
           def hasNext = {
             val oa = Await.result(produced.future, Duration.Inf)
             oa.nonEmpty

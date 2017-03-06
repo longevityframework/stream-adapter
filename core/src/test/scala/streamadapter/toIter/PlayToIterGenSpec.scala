@@ -1,8 +1,8 @@
 package streamadapter.toIter
 
 import _root_.play.api.libs.iteratee.Enumerator
-import java.io.Closeable
 import scala.concurrent.ExecutionContext.Implicits.global
+import streamadapter.CloseableIter
 import streamadapter.play.iterGenToPlayEnumerator
 import streamadapter.play.playEnumeratorToIterGen
 
@@ -13,7 +13,7 @@ class PlayFromIterGenSpec extends ToIterGenSpec[Enumerator] {
   def adapt = playEnumeratorToIterGen.adapt[Int] _
 
   def create = (sequence: Seq[Int]) => {
-    def iter = new Iterator[Int] with Closeable {
+    def iter = new CloseableIter[Int] {
       private var i = 0
       def hasNext = i < sequence.size
       def next = {

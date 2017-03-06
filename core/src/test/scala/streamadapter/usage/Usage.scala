@@ -1,7 +1,5 @@
 package usage // intentionally different package here to mimic real life usage
 
-import java.io.Closeable
-
 // TODO rename file (put it in a subdir too)
 // TODO: this should probably just be a class that compiles. in that case, i can easily use it for a
 // usage example
@@ -10,7 +8,7 @@ object Usage extends App {
   val iterGenSeq = 0.until(10)
 
   val iterGen = { () =>
-    new Iterator[Int] with Closeable {
+    new streamadapter.CloseableIter[Int] {
       private val i = iterGenSeq.toIterator
       def hasNext = i.hasNext
       def next = i.next

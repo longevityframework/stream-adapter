@@ -1,17 +1,17 @@
-import java.io.Closeable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 /** TODO */
 package object streamadapter {
 
-  // TODO declare this without java.io.Closeable
   /** a closeable iterator. has method `close: Unit`, along with the standard `Iterator` methods, so
    * that enumerator can be closed early when the iteratee is complete.
-   *
-   * TODO tparams
    */
-  type CloseableIter[+A] = Iterator[A] with Closeable
+  trait CloseableIter[+A] extends Iterator[A] {
+
+    /** closes this stream and releases any system resources associated with it */
+    def close: Unit
+  }
 
   /** a [[CloseableIter closeable iterator]] generator. whenever the function is called, it
    * produces an iterator for the same underlying resource. this is necessary the enumerators to be

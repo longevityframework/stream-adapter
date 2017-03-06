@@ -1,6 +1,6 @@
 package streamadapter.toIter
 
-import java.io.Closeable
+import streamadapter.CloseableIter
 import streamadapter.fs2.fs2StreamToIterGen
 import streamadapter.fs2.iterGenToFS2Stream
 import streamadapter.fs2.FS2Stream
@@ -15,7 +15,7 @@ class FS2ToIterGenSpec extends ToIterGenSpec[FS2Stream] {
   def adapt = fs2StreamToIterGen.adapt[Int] _
 
   def create = (sequence: Seq[Int]) => {
-    def iter = new Iterator[Int] with Closeable {
+    def iter = new CloseableIter[Int] {
       private var i = 0
       def hasNext = {
         i < sequence.size
@@ -31,7 +31,7 @@ class FS2ToIterGenSpec extends ToIterGenSpec[FS2Stream] {
   }
 
   def createBlocking = (sequence: Seq[Int]) => {
-    def iter = new Iterator[Int] with Closeable {
+    def iter = new CloseableIter[Int] {
       private val i = sequence.toIterator
       private var closed = false
       def hasNext = {

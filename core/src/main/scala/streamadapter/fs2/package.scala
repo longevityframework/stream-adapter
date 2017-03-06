@@ -3,7 +3,6 @@ package streamadapter
 import _root_.fs2.Strategy
 import _root_.fs2.Stream
 import _root_.fs2.Task
-import java.io.Closeable
 
 package object fs2 {
 
@@ -54,7 +53,7 @@ package object fs2 {
         consumed.success(Some(()))
 
         // the consumer
-        val iterator = new Iterator[A] with Closeable {
+        val iterator = new CloseableIter[A] {
           def hasNext = {
             val oa = Await.result(produced.future, Duration.Inf)
             oa.nonEmpty

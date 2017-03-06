@@ -5,7 +5,6 @@ import _root_.akka.stream.ActorMaterializer
 import _root_.akka.stream.scaladsl.Keep
 import _root_.akka.stream.scaladsl.Sink
 import _root_.akka.stream.scaladsl.Source
-import java.io.Closeable
 import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -32,7 +31,7 @@ package object akka {
   implicit def akkaSourceToIterGen(implicit materializer: ActorMaterializer) = {
     new PublisherAdapter[AkkaSource, IterGen] {
       def adapt[A](source: Source[A, NotUsed]): IterGen[A] = { () =>
-        new Iterator[A] with Closeable {
+        new CloseableIter[A] {
           private val queue = source.toMat(Sink.queue[A]())(Keep.right).run()
           private var closed = false
           private var pull: Future[Option[A]] = _

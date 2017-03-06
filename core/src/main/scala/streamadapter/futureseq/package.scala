@@ -1,6 +1,5 @@
 package streamadapter
 
-import java.io.Closeable
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -26,7 +25,7 @@ package object futureseq {
   implicit def futureSeqToIterGen(implicit context: ExecutionContext) = {
     new PublisherAdapter[FutureSeq, IterGen] {
       def adapt[A](futureSeq: Future[Seq[A]]): IterGen[A] = { () =>
-        new Iterator[A] with Closeable {
+        new CloseableIter[A] {
           private lazy val i = Await.result(futureSeq, Duration.Inf).toIterator
           def hasNext = i.hasNext
           def next    = i.next

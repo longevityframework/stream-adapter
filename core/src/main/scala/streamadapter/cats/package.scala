@@ -7,7 +7,6 @@ import _root_.cats.Bimonad
 import io.iteratee.Enumerator
 import io.iteratee.Iteratee
 import io.iteratee.internal.Step
-import java.io.Closeable
 
 /** TODO */
 package object cats {
@@ -68,7 +67,7 @@ package object cats {
       def adapt[E](enumerator: Enumerator[F, E]): IterGen[E] = { () =>
 
         // QUESTION: is there some way that i can do this without the promises? i have a version
-        // that works, but performs terribly, that only defines an Iterator with Closeable, and uses
+        // that works, but performs terribly, that only defines a CloseableIter, and uses
         // methods in the Iteratee companion object to drive it, here:
         //
         // https://github.com/longevityframework/stream-adapter/blob/exp/cats-to-iter-f-extract/core/src/main/scala/streamadapter/cats/package.scala#L63
@@ -94,7 +93,7 @@ package object cats {
         consumed.success(Some(()))
 
         // the consumer
-        val iterator = new Iterator[E] with Closeable {
+        val iterator = new CloseableIter[E] {
           def hasNext = {
             val oa = Await.result(produced.future, Duration.Inf)
             oa.nonEmpty

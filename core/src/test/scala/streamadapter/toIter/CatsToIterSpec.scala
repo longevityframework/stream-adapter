@@ -1,7 +1,7 @@
 package streamadapter.toIter
 
 import _root_.cats.Eval
-import java.io.Closeable
+import streamadapter.CloseableIter
 import streamadapter.cats.EvalEnumerator
 import streamadapter.cats.iterGenToCatsEnumerator
 import streamadapter.cats.catsEnumeratorToIterGen
@@ -14,7 +14,7 @@ class CatsToIterGenSpec extends ToIterGenSpec[EvalEnumerator] {
   def adapt = catsEnumeratorToIterGen[Eval].adapt[Int] _
 
   def create = (sequence: Seq[Int]) => {
-    def iter = new Iterator[Int] with Closeable {
+    def iter = new CloseableIter[Int] {
       private var i = 0
       def hasNext = {
         i < sequence.size
@@ -30,7 +30,7 @@ class CatsToIterGenSpec extends ToIterGenSpec[EvalEnumerator] {
   }
 
   def createBlocking = (sequence: Seq[Int]) => {
-    def iter = new Iterator[Int] with Closeable {
+    def iter = new CloseableIter[Int] {
       private val i = sequence.toIterator
       def hasNext = {
         try Thread.sleep(1000) catch { case t: InterruptedException => }
