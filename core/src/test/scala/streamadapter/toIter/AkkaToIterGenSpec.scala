@@ -1,27 +1,28 @@
 package streamadapter.toIter
 
+import java.io.Closeable
 import _root_.akka.actor.ActorSystem
 import _root_.akka.stream.ActorMaterializer
-import _root_.akka.stream.scaladsl.Source
 import streamadapter.akka.AkkaSource
 import streamadapter.akka.akkaSourceToIterGen
+import streamadapter.akka.iterGenToAkkaSource
 
-object AkkaFromIterGenSpec {
+object AkkaToIterGenSpec {
 
-  implicit val materializer = ActorMaterializer()(ActorSystem("unblocking"))
+  implicit val materializer = ActorMaterializer()(ActorSystem("streamadapter"))
 
 }
 
-import AkkaFromIterGenSpec.materializer
+import AkkaToIterGenSpec.materializer
 
-class AkkaFromIterGenSpec extends ToIterGenSpec[AkkaSource] {
+class AkkaToIterGenSpec extends ToIterGenSpec[AkkaSource] {
 
   def adapterName = "akkaSourceToIterGen"
 
   def adapt = akkaSourceToIterGen.adapt[Int] _
 
   def create = (sequence: Seq[Int]) => {
-    def iter = new Iterator[Int] {
+    def iter = new Iterator[Int] with Closeable {
       var i = 0
       def hasNext = i < sequence.size
       def next = {
@@ -29,12 +30,13 @@ class AkkaFromIterGenSpec extends ToIterGenSpec[AkkaSource] {
         i += 1
         n
       }
+      def close = ()
     }
-    Source.fromIterator(iter _)
+    iterGenToAkkaSource.adapt(iter _)
   }
 
   def createBlocking = (sequence: Seq[Int]) => {
-    def iter = new Iterator[Int] {
+    def iter = new Iterator[Int] with Closeable {
       private val i = sequence.toIterator
       def hasNext = {
         try Thread.sleep(1000) catch { case t: InterruptedException => }
@@ -44,8 +46,9 @@ class AkkaFromIterGenSpec extends ToIterGenSpec[AkkaSource] {
         try Thread.sleep(1000) catch { case t: InterruptedException => }
         i.next
       }
+      def close = ()
     }
-    Source.fromIterator(iter _)
+    iterGenToAkkaSource.adapt(iter _)
   }
 
   def implementsClose = true

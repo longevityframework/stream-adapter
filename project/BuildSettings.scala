@@ -25,6 +25,7 @@ object BuildSettings {
   )
 
   val buildSettings = publishSettings ++ Seq(
+    fork := true,
 
     // compile
     scalacOptions ++= nonConsoleScalacOptions ++ otherScalacOptions,

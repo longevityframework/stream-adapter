@@ -28,7 +28,6 @@ package object akka {
     }
   }
 
-  // TODO
   /** produces a publisher adapter from akka source to iterator generator */
   implicit def akkaSourceToIterGen(implicit materializer: ActorMaterializer) = {
     new PublisherAdapter[AkkaSource, IterGen] {
@@ -47,6 +46,7 @@ package object akka {
             a
           }
           def close = if (!closed) {
+            println("akkaSourceToIterGen close")
             queue.cancel
             closed = true
           }

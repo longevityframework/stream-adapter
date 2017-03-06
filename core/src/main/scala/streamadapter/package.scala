@@ -5,6 +5,7 @@ import scala.concurrent.Future
 /** TODO */
 package object streamadapter {
 
+  // TODO declare this without java.io.Closeable
   /** a closeable iterator. has method `close: Unit`, along with the standard `Iterator` methods, so
    * that enumerator can be closed early when the iteratee is complete.
    *
