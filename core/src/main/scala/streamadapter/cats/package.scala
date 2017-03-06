@@ -81,7 +81,7 @@ package object cats {
         import scala.concurrent.duration.Duration
 
         // TODO add some chunking here for performance
-        
+
         // this promise is completed when the producer takes an action. it either results in the next
         // value (Some(a)), or it signals completion with None
         var produced = Promise[Option[E]]()

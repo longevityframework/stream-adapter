@@ -1,17 +1,18 @@
 package streamadapter.toIter
 
-import _root_.cats.Eval
 import java.io.Closeable
-import streamadapter.cats.EvalEnumerator
-import streamadapter.cats.iterGenToCatsEnumerator
-import streamadapter.cats.catsEnumeratorToIterGen
+import streamadapter.fs2.fs2StreamToIterGen
+import streamadapter.fs2.iterGenToFS2Stream
+import streamadapter.fs2.FS2Stream
 
 // TODO this file is misnamed
-class CatsToIterGenSpec extends ToIterGenSpec[EvalEnumerator] {
+class FS2ToIterGenSpec extends ToIterGenSpec[FS2Stream] {
 
-  def adapterName = "catsEnumeratorToIterGen"
+  implicit val S = _root_.fs2.Strategy.fromFixedDaemonPool(8, threadName = "worker")
 
-  def adapt = catsEnumeratorToIterGen[Eval].adapt[Int] _
+  def adapterName = "fs2StreamToIterGen"
+
+  def adapt = fs2StreamToIterGen.adapt[Int] _
 
   def create = (sequence: Seq[Int]) => {
     def iter = new Iterator[Int] with Closeable {
@@ -26,23 +27,26 @@ class CatsToIterGenSpec extends ToIterGenSpec[EvalEnumerator] {
       }
       def close = ()
     }
-    iterGenToCatsEnumerator[Eval].adapt(iter _)
+    iterGenToFS2Stream.adapt(iter _)
   }
 
   def createBlocking = (sequence: Seq[Int]) => {
     def iter = new Iterator[Int] with Closeable {
       private val i = sequence.toIterator
+      private var closed = false
       def hasNext = {
         try Thread.sleep(1000) catch { case t: InterruptedException => }
-        i.hasNext
+        i.hasNext && !closed
       }
       def next = {
         try Thread.sleep(1000) catch { case t: InterruptedException => }
         i.next
       }
-      def close = ()
+      def close = {
+        closed = true
+      }
     }
-    iterGenToCatsEnumerator[Eval].adapt(iter _)
+    iterGenToFS2Stream.adapt(iter _)
   }
 
   def implementsClose = true

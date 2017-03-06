@@ -24,8 +24,7 @@ $adapterName should
   produce a result immediately, even if the publisher blocks         $doesntBlock
   produce the same result when run twice                             $reproducible
 $closesEarlyFragment"""
-  def d2 =s2"""
-"""
+
   def closesEarlyFragment = if (implementsClose) {
     s2"""
   stop querying from source if the downstream publisher closes early $closesEarly
