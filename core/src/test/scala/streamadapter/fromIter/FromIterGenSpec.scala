@@ -19,9 +19,10 @@ abstract class FromIterGenSpec[P[_]] extends Specification {
 
   def is = s2"""
 $adapterName should
-  produce the same elements as the original iterator            $sameElts
-  produce a result immediately, even if the iterator blocks     $doesntBlock
-  produce the same result when run twice                        $reproducible
+  produce the same elements as upstream                 $sameElts
+  produce a result immediately, even if upstream blocks $doesntBlock
+  produce the same result when run twice                $reproducible
+  produce an exception thrown by upstream               $threadsThrowables
 $takeThreeFragment"""
 
   def takeThreeFragment = takeThreeOpt match {
@@ -69,9 +70,30 @@ $takeThreeFragment"""
     override def apply = new BlockingII
   }
 
+  class ThrowingIGenException extends RuntimeException
+
+  class ThrowingIGen extends IterGen[Int] {
+    class TI extends Iterator[Int] with Closeable {
+      val i = elements.iterator
+      var index = 0
+      def hasNext: Boolean = {
+        if (index == elements.size - 2) throw new ThrowingIGenException
+        i.hasNext
+      }
+      def next(): Int = {
+        index += 1
+        i.next
+      }
+      def close = ()
+    }
+    def apply = new TI
+  }
+
   def iterGen = new IIGen
 
   def blockingIterGen = new BlockingIIGen
+
+  def throwingIterGen = new ThrowingIGen
 
   def sameElts = toIterator(adapt(iterGen)) must beEqualTo(elements)
 
@@ -85,6 +107,10 @@ $takeThreeFragment"""
   def reproducible = {
     val u = adapt(iterGen)
     toIterator(u).toList must beEqualTo(toIterator(u).toList)
+  }
+
+  def threadsThrowables = {
+    toIterator(adapt(throwingIterGen)).toList must throwA [ThrowingIGenException]
   }
 
   def threeElts(takeThree: (P[Int]) => P[Int]) = {
