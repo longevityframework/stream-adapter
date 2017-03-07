@@ -8,7 +8,8 @@ object BuildSettings {
     organization := "org.longevityframework",
     version := "0.0.0",
     scalaVersion := Dependencies.scalaVersionString,
-    crossScalaVersions := Seq("2.11.8", Dependencies.scalaVersionString))
+    crossScalaVersions := Seq("2.11.8", Dependencies.scalaVersionString),
+    cancelable in Global := true)
 
   val publishSettings = commonSettings ++ Seq(
     publishMavenStyle := true,

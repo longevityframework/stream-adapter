@@ -25,16 +25,19 @@ package object streamadapter {
    * at this point, IterGen serves as our common interchange format for publishers - we will try
    * to get to and from conversions for this type, from each stream type we handle. we can then
    * convert between any two publisher types using this one as a mediator.
-   *
-   * TODO tparams
    */
   type IterGen[+A] = () => CloseableIter[A]
 
+  implicit def cross[P1[_], P2[_]](
+    implicit pa1: PublisherAdapter[P1, IterGen],
+    pa2: PublisherAdapter[IterGen, P2]): PublisherAdapter[P1, P2] =
+    new PublisherAdapter[P1, P2] {
+      def adapt[A](p1: P1[A]): P2[A] = pa2.adapt(pa1.adapt(p1))
+    }
+
   /** TODO */
-  def adapt0[P1[_], P2[_], A](
-    p1: P1[A])(
-    implicit publisherAdapter: PublisherAdapter[P1, P2]): P2[A] =
-    publisherAdapter.adapt(p1)
+  def adapt[P1[_], P2[_], A](p1: P1[A])(implicit pa: PublisherAdapter[P1, P2]): P2[A] =
+    pa.adapt(p1)
 
   private[streamadapter] def trampoline[A](f: => Future[A])(implicit context: ExecutionContext): Future[A] =
     Future(()).flatMap { _ => f }

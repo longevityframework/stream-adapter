@@ -17,6 +17,9 @@ import scala.concurrent.duration.Duration
 /** TODO */
 package object play {
 
+  /** an alias for `play.api.libs.iteratee.Enumerator` */
+  type PlayEnumerator[A] = Enumerator[A]
+
   /** produces a publisher adapter from iterator generator to akka source */
   implicit def iterGenToPlayEnumerator(implicit context: ExecutionContext) = {
     new PublisherAdapter[IterGen, Enumerator] {

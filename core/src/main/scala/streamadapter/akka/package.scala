@@ -32,7 +32,7 @@ package object akka {
     new PublisherAdapter[AkkaSource, IterGen] {
       def adapt[A](source: Source[A, NotUsed]): IterGen[A] = { () =>
         new CloseableIter[A] {
-          private val queue = source.toMat(Sink.queue[A]())(Keep.right).run()
+          private lazy val queue = source.toMat(Sink.queue[A]())(Keep.right).run()
           private var closed = false
           private var pull: Future[Option[A]] = _
           private def preparePull = pull = queue.pull
@@ -45,7 +45,6 @@ package object akka {
             a
           }
           def close = if (!closed) {
-            println("akkaSourceToIterGen close")
             queue.cancel
             closed = true
           }

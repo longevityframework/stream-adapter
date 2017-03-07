@@ -15,9 +15,7 @@ class PlayFromIterGenSpec extends FromIterGenSpec[Enumerator] {
   def adapt = iterGenToPlayEnumerator.adapt
 
   def toIterator: Enumerator[Int] => Iterator[Int] = { (enumerator) =>
-    val iteratee = Iteratee.fold[Int, Seq[Int]](Seq()) { case (acc, int) =>
-      acc :+ int
-    }
+    val iteratee = Iteratee.fold[Int, Seq[Int]](Seq())(_ :+ _)
     val f = enumerator.run(iteratee)
     Await.result(f, Duration.Inf).toIterator
   }
