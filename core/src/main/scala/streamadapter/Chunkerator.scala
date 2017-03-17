@@ -32,8 +32,7 @@ trait Chunkerator[+A] extends Function0[CloseableChunkIter[A]] {
     def close = chunker.close
   }
 
-  // TODO vec should be vector everywhere
-  /** produces a vec of the elements in the chunks */
+  /** produces a vector of the elements in the chunks */
   def toVector = {
     val chunker = self.apply
     var buffer = new scala.collection.immutable.VectorBuilder[A]
@@ -43,10 +42,14 @@ trait Chunkerator[+A] extends Function0[CloseableChunkIter[A]] {
 
 }
 
-/** TODO */
+/** contains factory methods for producing chunkerators */
 object Chunkerator {
 
-  /** TODO */
+  /** creates a chunkerator by grouping a sequence
+   * @tparam A the type of the elements in the sequence
+   * @param n the size of the groups
+   * @param sequence the sequence to group
+   */
   def grouped[A](n: Int, sequence: Seq[A]) = new Chunkerator[A] {
     def apply = CloseableChunkIter.grouped(n, sequence)
   }

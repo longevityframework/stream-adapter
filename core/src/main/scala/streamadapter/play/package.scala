@@ -13,7 +13,7 @@ import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.concurrent.blocking
 
-/** TODO */
+/** contains [[StreamAdapter stream adapters]] for play enumerators */
 package object play {
 
   /** an alias for `play.api.libs.iteratee.Enumerator` */
@@ -21,7 +21,7 @@ package object play {
 
   /** produces a publisher adapter from chunkerator to akka source */
   implicit def chunkeratorToPlayEnumerator(implicit context: ExecutionContext) = {
-    new PublisherAdapter[Chunkerator, Enumerator] {
+    new StreamAdapter[Chunkerator, Enumerator] {
       def adapt[A](chunkerator: Chunkerator[A]): Enumerator[A] = {
         new Enumerator[A] {
           def apply[B](iteratee: Iteratee[A, B]): Future[Iteratee[A, B]] = {
@@ -62,7 +62,7 @@ package object play {
 
   /** produces a publisher adapter from akka source to chunkerator */
   implicit def playEnumeratorToChunkerator(implicit context: ExecutionContext) = {
-    new PublisherAdapter[Enumerator, Chunkerator] {
+    new StreamAdapter[Enumerator, Chunkerator] {
       def adapt[A](enumerator: Enumerator[A]): Chunkerator[A] = { () =>
 
         // this promise is completed when the producer takes an action. it either results in the next

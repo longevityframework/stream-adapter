@@ -4,14 +4,16 @@ import _root_.fs2.Strategy
 import _root_.fs2.Stream
 import _root_.fs2.Task
 
+/** contains [[StreamAdapter stream adapters]] for FS2 streams */
 package object fs2 {
 
+  /** an FS2 stream bound to a `Task` effect */
   // TODO generalize away from Task
   type FS2Stream[A] = Stream[Task, A]
 
   /** produces a publisher adapter from chunkerator to FS2 stream */
   implicit def chunkeratorToFS2Stream = {
-    new PublisherAdapter[Chunkerator, FS2Stream] {
+    new StreamAdapter[Chunkerator, FS2Stream] {
       def adapt[A](chunkerator: Chunkerator[A]): Stream[Task, A] = {
         def iterToStream(i: CloseableChunkIter[A]): Stream[Task, A] = {
           if (i.hasNext) {
@@ -30,7 +32,7 @@ package object fs2 {
 
   /** produces a publisher adapter from FS2 stream to chunkerator */
   implicit def fs2StreamToChunkerator(implicit S: Strategy) = {
-    new PublisherAdapter[FS2Stream, Chunkerator] {
+    new StreamAdapter[FS2Stream, Chunkerator] {
       def adapt[A](stream: Stream[Task, A]): Chunkerator[A] = { () =>
 
         // TODO can i do this without promises?

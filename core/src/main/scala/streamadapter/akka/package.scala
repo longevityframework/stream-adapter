@@ -8,15 +8,15 @@ import _root_.akka.stream.scaladsl.Source
 import scala.concurrent.Await
 import scala.concurrent.Future
 
-/** TODO */
+/** contains [[StreamAdapter stream adapters]] for Akka sources */
 package object akka {
 
-  /** TODO */
+  /** an Akka source with `NotUsed` for a materialization */
   type AkkaSource[A] = Source[A, NotUsed]
 
   /** produces a publisher adapter from chunkerator to akka source */
   implicit val chunkeratorToAkkaSource = {
-    new PublisherAdapter[Chunkerator, AkkaSource] {
+    new StreamAdapter[Chunkerator, AkkaSource] {
       def adapt[A](chunkerator: Chunkerator[A]): Source[A, NotUsed] = {
         Source.unfoldResource[A, CloseableIter[A]](
           () => chunkerator.toIterator,
@@ -28,7 +28,7 @@ package object akka {
 
   /** produces a publisher adapter from akka source to chunkerator */
   implicit def akkaSourceToChunkerator(implicit materializer: ActorMaterializer) = {
-    new PublisherAdapter[AkkaSource, Chunkerator] {
+    new StreamAdapter[AkkaSource, Chunkerator] {
       def adapt[A](source: Source[A, NotUsed]): Chunkerator[A] = { () =>
         new CloseableChunkIter[A] {
           private lazy val queue = source.grouped(10).toMat(Sink.queue())(Keep.right).run()

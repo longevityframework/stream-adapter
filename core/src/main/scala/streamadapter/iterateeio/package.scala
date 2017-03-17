@@ -8,13 +8,13 @@ import io.iteratee.Enumerator
 import io.iteratee.Iteratee
 import io.iteratee.internal.Step
 
-/** TODO */
+/** contains [[StreamAdapter stream adapters]] for `iteratee.io` enumerators */
 package object iterateeio {
 
-  /** TODO */
+  /** an iteratee.io enumerator bound to an `Eval` effect */
   type EvalEnumerator[E] = Enumerator[Eval, E]
 
-  /** TODO */
+  /** an iteratee.io enumerator bound to an `Id` effect */
   type IdEnumerator[E] = Enumerator[Id, E]
 
   /** produces a publisher adapter from chunkerator to an iteratee.io enumerator */
@@ -27,7 +27,7 @@ package object iterateeio {
    */
   class ChunkeratorToIterateeIoEnumerator[F[_]](F: Monad[F]) {
     type IterateeIoEnumerator[E] = Enumerator[F, E]
-    val adapter = new PublisherAdapter[Chunkerator, IterateeIoEnumerator] {
+    val adapter = new StreamAdapter[Chunkerator, IterateeIoEnumerator] {
       def adapt[E](chunkerator: Chunkerator[E]): Enumerator[F, E] = {
         new Enumerator[F, E] {
           final def apply[A](step: Step[F, E, A]): F[Step[F, E, A]] = {
@@ -63,7 +63,7 @@ package object iterateeio {
   // call F.extract on the iteratee to get it to "run". does that make sense to you?
   class IterateeIoEnumeratorToChunkerator[F[_]](implicit F: Bimonad[F]) {
     type IterateeIoEnumerator[E] = Enumerator[F, E]
-    val adapter = new PublisherAdapter[IterateeIoEnumerator, Chunkerator] {
+    val adapter = new StreamAdapter[IterateeIoEnumerator, Chunkerator] {
       def adapt[E](enumerator: Enumerator[F, E]): Chunkerator[E] = { () =>
 
         // QUESTION: is there some way that i can do this without the promises? i have a version
