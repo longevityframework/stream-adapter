@@ -9,6 +9,7 @@ import io.iteratee.Iteratee
 import io.iteratee.internal.Step
 
 /** TODO */
+// TODO rename cats to iterateeIo
 package object cats {
 
   /** TODO */
@@ -107,11 +108,12 @@ package object cats {
           }
         }
 
+        // the producer
         val iteratee: Iteratee[F, Vector[E], Unit] = Iteratee.foreach[F, Vector[E]](
-          { e =>
+          { es =>
             val ou = Await.result(consumed.future, streamadapter.timeout)
             consumed = Promise()
-            produced.success(Some(e))
+            produced.success(Some(es))
           }).map({ a =>
             val ou = Await.result(consumed.future, streamadapter.timeout)
             consumed = Promise()

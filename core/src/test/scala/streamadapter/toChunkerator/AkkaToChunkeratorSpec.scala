@@ -10,7 +10,10 @@ import streamadapter.akka.chunkeratorToAkkaSource
 
 object AkkaToChunkeratorSpec {
 
-  implicit val materializer = ActorMaterializer()(ActorSystem("streamadapter"))
+  implicit val actorSystem = ActorSystem("streamadapter",
+    classLoader = Some(classOf[Chunkerator[_]].getClassLoader))
+
+  implicit val materializer = ActorMaterializer()
 
 }
 

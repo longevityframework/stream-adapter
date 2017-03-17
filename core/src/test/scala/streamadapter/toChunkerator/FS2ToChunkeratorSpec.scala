@@ -14,7 +14,7 @@ class FS2ToChunkeratorSpec extends ToChunkeratorSpec[FS2Stream] {
 
   def adapt = fs2StreamToChunkerator.adapt[Int] _
 
-  def create = (seq: Seq[Int]) => chunkeratorToFS2Stream.adapt(Chunkerator.grouped(10, seq.toVector))
+  def create = (seq: Seq[Int]) => chunkeratorToFS2Stream.adapt(Chunkerator.grouped(10, seq))
 
   def createBlocking = (sequence: Seq[Int]) => {
     def iter = new CloseableChunkIter[Int] {

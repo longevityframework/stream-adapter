@@ -13,7 +13,7 @@ class CatsToChunkeratorSpec extends ToChunkeratorSpec[EvalEnumerator] {
 
   def adapt = catsEnumeratorToChunkerator[Eval].adapt[Int] _
 
-  def create = (seq: Seq[Int]) => chunkeratorToCatsEnumerator[Eval].adapt(Chunkerator.grouped(10, seq.toVector))
+  def create = (seq: Seq[Int]) => chunkeratorToCatsEnumerator[Eval].adapt(Chunkerator.grouped(10, seq))
 
   def createBlocking = (sequence: Seq[Int]) => {
     def iter = new CloseableChunkIter[Int] {

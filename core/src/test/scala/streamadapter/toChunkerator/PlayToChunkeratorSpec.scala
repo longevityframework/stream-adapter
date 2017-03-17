@@ -12,7 +12,7 @@ class PlayToChunkeratorSpec extends ToChunkeratorSpec[Enumerator] {
 
   def adapt = playEnumeratorToChunkerator.adapt[Int] _
 
-  def create = (seq: Seq[Int]) => chunkeratorToPlayEnumerator.adapt(Chunkerator.grouped(10, seq.toVector))
+  def create = (seq: Seq[Int]) => chunkeratorToPlayEnumerator.adapt(Chunkerator.grouped(10, seq))
 
   def createBlocking = (seq: Seq[Int]) => {
     def iter = new Iterator[Int] {

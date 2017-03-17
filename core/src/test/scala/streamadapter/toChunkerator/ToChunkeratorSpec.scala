@@ -85,7 +85,7 @@ $closesEarlyFragment"""
     iter.next
     iter.next
     iter.close
-    track.viewCounts.keys.max must be_>=(2) and be_<=(100) // allow for a certain amount of buffering
+    track.viewCounts.keys.max must be_>=(2) and be_<=(500) // allow for a certain amount of buffering
   }
 
 }
