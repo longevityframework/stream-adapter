@@ -17,25 +17,25 @@ package object cats {
   /** TODO */
   type IdEnumerator[E] = Enumerator[Id, E]
 
-  /** produces a publisher adapter from iterator generator to a cats-style `io.iteratee` enumerator */
-  implicit def iterGenToCatsEnumerator[F[_]](implicit F: Monad[F]) =
-    new IterGenToCatsEnumerator(F).adapter
+  /** produces a publisher adapter from chunkerator to a cats-style `io.iteratee` enumerator */
+  implicit def chunkeratorToCatsEnumerator[F[_]](implicit F: Monad[F]) =
+    new ChunkeratorToCatsEnumerator(F).adapter
 
   /** contains an adapter wrapped with the type we are adapting to. exposing the `CatsEnumerator` type
    * within this class in a non-anonymous way helps resolve some problems the compiler has equating
    * the type returned by the adapter with the expected type.
    */
-  class IterGenToCatsEnumerator[F[_]](F: Monad[F]) {
+  class ChunkeratorToCatsEnumerator[F[_]](F: Monad[F]) {
     type CatsEnumerator[E] = Enumerator[F, E]
-    val adapter = new PublisherAdapter[IterGen, CatsEnumerator] {
-      def adapt[E](iterGen: IterGen[E]): Enumerator[F, E] = {
+    val adapter = new PublisherAdapter[Chunkerator, CatsEnumerator] {
+      def adapt[E](chunkerator: Chunkerator[E]): Enumerator[F, E] = {
         new Enumerator[F, E] {
           final def apply[A](step: Step[F, E, A]): F[Step[F, E, A]] = {
-            val iterator = iterGen()
+            val iterator = chunkerator()
             def applyInternal[A](step: Step[F, E, A]): F[Step[F, E, A]] = {
               if (!step.isDone && iterator.hasNext) {
-                // TODO: implement chunking here
-                F.flatMap(step.feedEl(iterator.next))(s => applyInternal[A](s))
+                val es = iterator.next
+                F.flatMap(step.feed(es))(s => applyInternal[A](s))
               } else {
                 iterator.close
                 F.pure(step)
@@ -48,11 +48,11 @@ package object cats {
     }
   }
 
-  /** produces a publisher adapter from a cats-style `io.iteratee` enumerator to iterator generator
+  /** produces a publisher adapter from a cats-style `io.iteratee` enumerator to chunkerator
    * TODO params
    */
-  implicit def catsEnumeratorToIterGen[F[_]](implicit F: Bimonad[F]) =
-    new CatsEnumeratorToIterGen()(F).adapter
+  implicit def catsEnumeratorToChunkerator[F[_]](implicit F: Bimonad[F]) =
+    new CatsEnumeratorToChunkerator()(F).adapter
 
   /** contains an adapter wrapped with the type we are adapting from. exposing the `CatsEnumerator` type
    * within this class in a non-anonymous way helps resolve some problems the compiler has equating
@@ -61,10 +61,10 @@ package object cats {
    */
   // QUESTION: it seems that i really need Bimonad here and not just Monad. because i need to
   // call F.extract on the iteratee to get it to "run". does that make sense to you?
-  class CatsEnumeratorToIterGen[F[_]](implicit F: Bimonad[F]) {
+  class CatsEnumeratorToChunkerator[F[_]](implicit F: Bimonad[F]) {
     type CatsEnumerator[E] = Enumerator[F, E]
-    val adapter = new PublisherAdapter[CatsEnumerator, IterGen] {
-      def adapt[E](enumerator: Enumerator[F, E]): IterGen[E] = { () =>
+    val adapter = new PublisherAdapter[CatsEnumerator, Chunkerator] {
+      def adapt[E](enumerator: Enumerator[F, E]): Chunkerator[E] = { () =>
 
         // QUESTION: is there some way that i can do this without the promises? i have a version
         // that works, but performs terribly, that only defines a CloseableIter, and uses
@@ -77,13 +77,10 @@ package object cats {
         // TODO can i do this without promises?
         import scala.concurrent.Await
         import scala.concurrent.Promise
-        import scala.concurrent.duration.Duration
-
-        // TODO add chunking
 
         // this promise is completed when the producer takes an action. it either results in the next
         // value (Some(a)), or it signals completion with None
-        var produced = Promise[Option[E]]()
+        var produced = Promise[Option[Seq[E]]]()
 
         // this promise is completed when the consumer consumes the next signal from the producer.
         // it either results in a signal to keep going (Some(())), or a signal to close (None)
@@ -93,13 +90,13 @@ package object cats {
         consumed.success(Some(()))
 
         // the consumer
-        val iterator = new CloseableIter[E] {
+        val iterator = new CloseableChunkIter[E] {
           def hasNext = {
-            val oa = Await.result(produced.future, Duration.Inf)
+            val oa = Await.result(produced.future, streamadapter.timeout)
             oa.nonEmpty
           }
           def next = {
-            val oa = Await.result(produced.future, Duration.Inf)
+            val oa = Await.result(produced.future, streamadapter.timeout)
             produced = Promise()
             consumed.success(Some(()))
             oa.get
@@ -110,14 +107,13 @@ package object cats {
           }
         }
 
-        val iteratee: Iteratee[F, E, Unit] = Iteratee.fold[F, E, Unit](())(
-          { case (a, e) =>
-            val ou = Await.result(consumed.future, Duration.Inf)
+        val iteratee: Iteratee[F, Vector[E], Unit] = Iteratee.foreach[F, Vector[E]](
+          { e =>
+            val ou = Await.result(consumed.future, streamadapter.timeout)
             consumed = Promise()
             produced.success(Some(e))
-            a
           }).map({ a =>
-            val ou = Await.result(consumed.future, Duration.Inf)
+            val ou = Await.result(consumed.future, streamadapter.timeout)
             consumed = Promise()
             produced.success(None)
             a
@@ -135,7 +131,7 @@ package object cats {
         import scala.concurrent.ExecutionContext.Implicits.global
         import scala.concurrent.blocking
         Future(blocking(
-          F.extract(iteratee(enumerator).run)
+          F.extract(iteratee(enumerator.grouped(10)).run)
         ))
         iterator
       }

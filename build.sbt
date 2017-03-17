@@ -12,6 +12,8 @@ lazy val core = Project(
 
     fork in Test := false,
 
+    libraryDependencies += Dependencies.typesafeConfigDep,
+
     libraryDependencies += Dependencies.akkaStreamDep      % Optional,
     libraryDependencies += Dependencies.catsDep            % Optional,
     libraryDependencies += Dependencies.catsIterateeDep    % Optional,

@@ -1,11 +1,11 @@
-package streamadapter.toIter
+package streamadapter.toChunkerator
 
 import org.joda.time.DateTime
 import org.specs2.Specification
-import streamadapter.IterGen
+import streamadapter.Chunkerator
 
 /** @tparam P the type of the publisher to convert from */
-abstract class ToIterGenSpec[P[_]] extends Specification {
+abstract class ToChunkeratorSpec[P[_]] extends Specification {
 
   def adapterName: String
 
@@ -14,7 +14,7 @@ abstract class ToIterGenSpec[P[_]] extends Specification {
 
   def createBlocking: Seq[Int] => P[Int]
 
-  def adapt: P[Int] => IterGen[Int]
+  def adapt: P[Int] => Chunkerator[Int]
 
   def implementsClose: Boolean
 
@@ -34,24 +34,22 @@ $closesEarlyFragment"""
 """
   }
 
-  def elements = 0 until 5000
+  def elements = (0 until 5000).toVector
 
-  def sameElts = {
-    adapt(create(elements))().toSeq must beEqualTo(elements)
-  }
+  def sameElts = adapt(create(elements)).apply.toVector.flatten must beEqualTo(elements.toVector)
 
   def doesntBlock = {
     val start = DateTime.now.getMillis
-    val iterGen = adapt(createBlocking(elements))
-    val iter = iterGen()
+    val chunkerator = adapt(createBlocking(elements))
+    val iter = chunkerator()
     val end = DateTime.now.getMillis
     iter.close
-    (end - start) must beLessThan(1000L)
+    (end - start) must beLessThan(3000L)
   }
 
   def reproducible = {
-    val u = create(elements)
-    adapt(u)().toSeq must beEqualTo (adapt(u)().toSeq)
+    val chunkerator = adapt(create(elements))
+    chunkerator.apply.toVector.flatten must beEqualTo (chunkerator.apply.toVector.flatten)
   }
 
   def trackingElements = new TrackingElements
@@ -61,21 +59,32 @@ $closesEarlyFragment"""
     var viewCounts = Map[Int, Int]()
     def apply(i: Int) = {
       viewCounts += i -> (viewCounts.getOrElse(i, 0) + 1)
-      elts.apply(i)
+      elts(i)
     }
-    def iterator = throw new UnsupportedOperationException("you aren't supposed to use iterator method in this test framework, just apply")
+    def iterator = new Iterator[Int] {
+      var i = 0
+      def hasNext = {
+        viewCounts += i -> (viewCounts.getOrElse(i, 0) + 1)
+        i < elts.size
+      }
+      def next = {
+        viewCounts += i -> (viewCounts.getOrElse(i, 0) + 1)
+        val a = elts(i)
+        i += 1
+        a
+      }
+    }
     def length = elts.length
   }
   
   def closesEarly = {
     val track = trackingElements
-    val iterGen = adapt(create(track))
-    val iter = iterGen()
+    val chunkerator = adapt(create(track))
+    val iter = chunkerator()
     iter.next
     iter.next
     iter.next
     iter.close
-    //try Thread.sleep(1000) catch { case t: InterruptedException => }
     track.viewCounts.keys.max must be_>=(2) and be_<=(100) // allow for a certain amount of buffering
   }
 

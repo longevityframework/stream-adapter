@@ -7,7 +7,6 @@ import _root_.akka.stream.scaladsl.Sink
 import _root_.akka.stream.scaladsl.Source
 import scala.concurrent.Await
 import scala.concurrent.Future
-import scala.concurrent.duration.Duration
 
 /** TODO */
 package object akka {
@@ -15,28 +14,28 @@ package object akka {
   /** TODO */
   type AkkaSource[A] = Source[A, NotUsed]
 
-  /** produces a publisher adapter from iterator generator to akka source */
-  implicit val iterGenToAkkaSource = {
-    new PublisherAdapter[IterGen, AkkaSource] {
-      def adapt[A](iterGen: IterGen[A]): Source[A, NotUsed] = {
+  /** produces a publisher adapter from chunkerator to akka source */
+  implicit val chunkeratorToAkkaSource = {
+    new PublisherAdapter[Chunkerator, AkkaSource] {
+      def adapt[A](chunkerator: Chunkerator[A]): Source[A, NotUsed] = {
         Source.unfoldResource[A, CloseableIter[A]](
-          iterGen,
+          () => chunkerator.toIterator,
           iterator => if (iterator.hasNext) Some(iterator.next) else None,
           iterator => iterator.close)
       }
     }
   }
 
-  /** produces a publisher adapter from akka source to iterator generator */
-  implicit def akkaSourceToIterGen(implicit materializer: ActorMaterializer) = {
-    new PublisherAdapter[AkkaSource, IterGen] {
-      def adapt[A](source: Source[A, NotUsed]): IterGen[A] = { () =>
-        new CloseableIter[A] {
-          private lazy val queue = source.toMat(Sink.queue[A]())(Keep.right).run()
+  /** produces a publisher adapter from akka source to chunkerator */
+  implicit def akkaSourceToChunkerator(implicit materializer: ActorMaterializer) = {
+    new PublisherAdapter[AkkaSource, Chunkerator] {
+      def adapt[A](source: Source[A, NotUsed]): Chunkerator[A] = { () =>
+        new CloseableChunkIter[A] {
+          private lazy val queue = source.grouped(10).toMat(Sink.queue())(Keep.right).run()
           private var closed = false
-          private var pull: Future[Option[A]] = _
+          private var pull: Future[Option[Seq[A]]] = _
           private def preparePull = pull = queue.pull
-          private def awaitPull = Await.result(pull, Duration.Inf)
+          private def awaitPull = Await.result(pull, streamadapter.timeout)
           def hasNext = !closed && awaitPull.nonEmpty
           def next = {
             if (closed) throw new NoSuchElementException

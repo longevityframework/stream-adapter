@@ -6,44 +6,42 @@ import _root_.fs2.Task
 
 package object fs2 {
 
-  // TODO either generalize away from Task, or try to include some Pure or something
+  // TODO generalize away from Task
   type FS2Stream[A] = Stream[Task, A]
 
-  /** produces a publisher adapter from iterator generator to FS2 stream */
-  implicit def iterGenToFS2Stream = {
-    new PublisherAdapter[IterGen, FS2Stream] {
-      def adapt[A](iterGen: IterGen[A]): Stream[Task, A] = {
-        def iteratorToStream(i: Iterator[A]): Stream[Task, A] = {
+  /** produces a publisher adapter from chunkerator to FS2 stream */
+  implicit def chunkeratorToFS2Stream = {
+    new PublisherAdapter[Chunkerator, FS2Stream] {
+      def adapt[A](chunkerator: Chunkerator[A]): Stream[Task, A] = {
+        def iterToStream(i: CloseableChunkIter[A]): Stream[Task, A] = {
           if (i.hasNext) {
-            // TODO: implement chunking here
-            Stream.emit(i.next) ++ iteratorToStream(i)
+            Stream.emits(i.next) ++ iterToStream(i)
           } else {
             Stream.empty[Task, A]
           }
         }
-        Stream.bracket[Task, CloseableIter[A], A](
-          Task.delay(iterGen()))(
-          iteratorToStream,
+        Stream.bracket[Task, CloseableChunkIter[A], A](
+          Task.delay(chunkerator()))(
+          iterToStream,
           i => Task.now(i.close))
       }
     }
   }
 
-  /** produces a publisher adapter from FS2 stream to iterator generator */
-  implicit def fs2StreamToIterGen(implicit S: Strategy) = {
-    new PublisherAdapter[FS2Stream, IterGen] {
-      def adapt[A](stream: Stream[Task, A]): IterGen[A] = { () =>
+  /** produces a publisher adapter from FS2 stream to chunkerator */
+  implicit def fs2StreamToChunkerator(implicit S: Strategy) = {
+    new PublisherAdapter[FS2Stream, Chunkerator] {
+      def adapt[A](stream: Stream[Task, A]): Chunkerator[A] = { () =>
 
         // TODO can i do this without promises?
         import scala.concurrent.Await
         import scala.concurrent.Promise
-        import scala.concurrent.duration.Duration
 
         // TODO add some chunking here for performance
 
         // this promise is completed when the producer takes an action. it either results in the next
         // value (Some(a)), or it signals completion with None
-        var produced = Promise[Option[A]]()
+        var produced = Promise[Option[Seq[A]]]()
 
         // this promise is completed when the consumer consumes the next signal from the producer.
         // it either results in a signal to keep going (Some(())), or a signal to close (None)
@@ -53,20 +51,19 @@ package object fs2 {
         consumed.success(Some(()))
 
         // the consumer
-        val iterator = new CloseableIter[A] {
+        val iterator = new CloseableChunkIter[A] {
           def hasNext = {
-            val oa = Await.result(produced.future, Duration.Inf)
+            val oa = Await.result(produced.future, streamadapter.timeout)
             oa.nonEmpty
           }
           def next = {
-            val oa = Await.result(produced.future, Duration.Inf)
+            val oa = Await.result(produced.future, streamadapter.timeout)
             produced = Promise()
             consumed.success(Some(()))
             oa.get
           }
           def close = {
-            Await.result(produced.future, Duration.Inf)
-            produced = Promise()
+            consumed = Promise()
             consumed.success(None)
           }
         }
@@ -83,13 +80,13 @@ package object fs2 {
         import scala.concurrent.blocking
         Future {
           blocking {
-            stream.takeWhile({ a =>
-              val ou = Await.result(consumed.future, Duration.Inf)
+            stream.chunks.takeWhile({ a =>
+              val ou = Await.result(consumed.future, streamadapter.timeout)
               consumed = Promise()
-              produced.success(Some(a))
+              produced.success(Some(a.toVector))
               ou.nonEmpty
             }).run.map({ t =>
-              val ou = Await.result(consumed.future, Duration.Inf)
+              val ou = Await.result(consumed.future, streamadapter.timeout)
               consumed = Promise()
               produced.success(None)
               t
