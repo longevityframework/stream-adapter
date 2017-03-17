@@ -3,12 +3,13 @@ package streamadapter
 import _root_.fs2.Strategy
 import _root_.fs2.Stream
 import _root_.fs2.Task
+import scala.concurrent.Await
+import scala.concurrent.Promise
 
 /** contains [[StreamAdapter stream adapters]] for FS2 streams */
 package object fs2 {
 
   /** an FS2 stream bound to a `Task` effect */
-  // TODO generalize away from Task
   type FS2Stream[A] = Stream[Task, A]
 
   /** produces a publisher adapter from chunkerator to FS2 stream */
@@ -34,12 +35,6 @@ package object fs2 {
   implicit def fs2StreamToChunkerator(implicit S: Strategy) = {
     new StreamAdapter[FS2Stream, Chunkerator] {
       def adapt[A](stream: Stream[Task, A]): Chunkerator[A] = { () =>
-
-        // TODO can i do this without promises?
-        import scala.concurrent.Await
-        import scala.concurrent.Promise
-
-        // TODO add some chunking here for performance
 
         // this promise is completed when the producer takes an action. it either results in the next
         // value (Some(a)), or it signals completion with None

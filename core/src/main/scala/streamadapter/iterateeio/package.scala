@@ -48,16 +48,13 @@ package object iterateeio {
     }
   }
 
-  /** produces a publisher adapter from an iteratee.io enumerator to chunkerator
-   * TODO params
-   */
+  /** produces a publisher adapter from an iteratee.io enumerator to chunkerator */
   implicit def iterateeIoEnumeratorToChunkerator[F[_]](implicit F: Bimonad[F]) =
     new IterateeIoEnumeratorToChunkerator()(F).adapter
 
   /** contains an adapter wrapped with the type we are adapting from. exposing the `IterateeIoEnumerator` type
    * within this class in a non-anonymous way helps resolve some problems the compiler has equating
    * the type returned by the adapter with the expected type.
-   * TODO params
    */
   // QUESTION: it seems that i really need Bimonad here and not just Monad. because i need to
   // call F.extract on the iteratee to get it to "run". does that make sense to you?
@@ -74,7 +71,6 @@ package object iterateeio {
         //
         // is there some way i can rework this alternate version so it performs?
 
-        // TODO can i do this without promises?
         import scala.concurrent.Await
         import scala.concurrent.Promise
 
@@ -119,8 +115,6 @@ package object iterateeio {
             produced.success(None)
             a
           })
-
-        // TODO get rid of future
 
         // QUESTION: i would really prefer to not use a future here, but it seems necessary that i
         // spawn off a second thread in this scenario. I really want to try to limit the

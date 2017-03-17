@@ -25,7 +25,6 @@ package object play {
       def adapt[A](chunkerator: Chunkerator[A]): Enumerator[A] = {
         new Enumerator[A] {
           def apply[B](iteratee: Iteratee[A, B]): Future[Iteratee[A, B]] = {
-            // TODO chunking
             val iterator = chunkerator.toIterator
             def applyInternal[B](iteratee: Iteratee[A, B]): Future[Iteratee[A, B]] =
               iteratee.fold[Iteratee[A, B]] {
@@ -110,7 +109,6 @@ package object play {
                 case Input.El(a) =>
                   val ou = Await.result(consumed.future, streamadapter.timeout)
                   consumed = Promise()
-                  // TODO chunking
                   produced.success(Some(Vector(a)))
                   if (ou.isEmpty) done else this
               }
