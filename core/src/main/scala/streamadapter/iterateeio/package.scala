@@ -1,16 +1,15 @@
 package streamadapter
 
-import _root_.cats.Eval
-import _root_.cats.Id
-import _root_.cats.Monad
-import _root_.cats.Bimonad
+import cats.Eval
+import cats.Id
+import cats.Monad
+import cats.Bimonad
 import io.iteratee.Enumerator
 import io.iteratee.Iteratee
 import io.iteratee.internal.Step
 
 /** TODO */
-// TODO rename cats to iterateeIo
-package object cats {
+package object iterateeio {
 
   /** TODO */
   type EvalEnumerator[E] = Enumerator[Eval, E]
@@ -18,17 +17,17 @@ package object cats {
   /** TODO */
   type IdEnumerator[E] = Enumerator[Id, E]
 
-  /** produces a publisher adapter from chunkerator to a cats-style `io.iteratee` enumerator */
-  implicit def chunkeratorToCatsEnumerator[F[_]](implicit F: Monad[F]) =
-    new ChunkeratorToCatsEnumerator(F).adapter
+  /** produces a publisher adapter from chunkerator to an iteratee.io enumerator */
+  implicit def chunkeratorToIterateeIoEnumerator[F[_]](implicit F: Monad[F]) =
+    new ChunkeratorToIterateeIoEnumerator(F).adapter
 
-  /** contains an adapter wrapped with the type we are adapting to. exposing the `CatsEnumerator` type
+  /** contains an adapter wrapped with the type we are adapting to. exposing the `IterateeIoEnumerator` type
    * within this class in a non-anonymous way helps resolve some problems the compiler has equating
    * the type returned by the adapter with the expected type.
    */
-  class ChunkeratorToCatsEnumerator[F[_]](F: Monad[F]) {
-    type CatsEnumerator[E] = Enumerator[F, E]
-    val adapter = new PublisherAdapter[Chunkerator, CatsEnumerator] {
+  class ChunkeratorToIterateeIoEnumerator[F[_]](F: Monad[F]) {
+    type IterateeIoEnumerator[E] = Enumerator[F, E]
+    val adapter = new PublisherAdapter[Chunkerator, IterateeIoEnumerator] {
       def adapt[E](chunkerator: Chunkerator[E]): Enumerator[F, E] = {
         new Enumerator[F, E] {
           final def apply[A](step: Step[F, E, A]): F[Step[F, E, A]] = {
@@ -49,22 +48,22 @@ package object cats {
     }
   }
 
-  /** produces a publisher adapter from a cats-style `io.iteratee` enumerator to chunkerator
+  /** produces a publisher adapter from an iteratee.io enumerator to chunkerator
    * TODO params
    */
-  implicit def catsEnumeratorToChunkerator[F[_]](implicit F: Bimonad[F]) =
-    new CatsEnumeratorToChunkerator()(F).adapter
+  implicit def iterateeIoEnumeratorToChunkerator[F[_]](implicit F: Bimonad[F]) =
+    new IterateeIoEnumeratorToChunkerator()(F).adapter
 
-  /** contains an adapter wrapped with the type we are adapting from. exposing the `CatsEnumerator` type
+  /** contains an adapter wrapped with the type we are adapting from. exposing the `IterateeIoEnumerator` type
    * within this class in a non-anonymous way helps resolve some problems the compiler has equating
    * the type returned by the adapter with the expected type.
    * TODO params
    */
   // QUESTION: it seems that i really need Bimonad here and not just Monad. because i need to
   // call F.extract on the iteratee to get it to "run". does that make sense to you?
-  class CatsEnumeratorToChunkerator[F[_]](implicit F: Bimonad[F]) {
-    type CatsEnumerator[E] = Enumerator[F, E]
-    val adapter = new PublisherAdapter[CatsEnumerator, Chunkerator] {
+  class IterateeIoEnumeratorToChunkerator[F[_]](implicit F: Bimonad[F]) {
+    type IterateeIoEnumerator[E] = Enumerator[F, E]
+    val adapter = new PublisherAdapter[IterateeIoEnumerator, Chunkerator] {
       def adapt[E](enumerator: Enumerator[F, E]): Chunkerator[E] = { () =>
 
         // QUESTION: is there some way that i can do this without the promises? i have a version

@@ -1,19 +1,19 @@
 package streamadapter.toChunkerator
 
-import _root_.cats.Eval
+import cats.Eval
 import streamadapter.Chunkerator
 import streamadapter.CloseableChunkIter
-import streamadapter.cats.EvalEnumerator
-import streamadapter.cats.chunkeratorToCatsEnumerator
-import streamadapter.cats.catsEnumeratorToChunkerator
+import streamadapter.iterateeio.EvalEnumerator
+import streamadapter.iterateeio.chunkeratorToIterateeIoEnumerator
+import streamadapter.iterateeio.iterateeIoEnumeratorToChunkerator
 
-class CatsToChunkeratorSpec extends ToChunkeratorSpec[EvalEnumerator] {
+class IterateeIoToChunkeratorSpec extends ToChunkeratorSpec[EvalEnumerator] {
 
-  def adapterName = "catsEnumeratorToChunkerator"
+  def adapterName = "iterateeIoEnumeratorToChunkerator"
 
-  def adapt = catsEnumeratorToChunkerator[Eval].adapt[Int] _
+  def adapt = iterateeIoEnumeratorToChunkerator[Eval].adapt[Int] _
 
-  def create = (seq: Seq[Int]) => chunkeratorToCatsEnumerator[Eval].adapt(Chunkerator.grouped(10, seq))
+  def create = (seq: Seq[Int]) => chunkeratorToIterateeIoEnumerator[Eval].adapt(Chunkerator.grouped(10, seq))
 
   def createBlocking = (sequence: Seq[Int]) => {
     def iter = new CloseableChunkIter[Int] {
@@ -28,7 +28,7 @@ class CatsToChunkeratorSpec extends ToChunkeratorSpec[EvalEnumerator] {
       }
       def close = ()
     }
-    chunkeratorToCatsEnumerator[Eval].adapt(iter _)
+    chunkeratorToIterateeIoEnumerator[Eval].adapt(iter _)
   }
 
   def implementsClose = true

@@ -17,20 +17,20 @@ object Usage extends App {
     println("akkaSource = " + Await.result(akkaSource.toMat(Sink.seq[Int])(Keep.right).run, Duration.Inf))
   }
 
-  val catsEnumerator: io.iteratee.Enumerator[cats.Eval, Int] = {
+  val iterateeIoEnumerator: io.iteratee.Enumerator[cats.Eval, Int] = {
     import streamadapter._
     import streamadapter.akka._
-    import streamadapter.cats._
+    import streamadapter.iterateeio._
     adapt[AkkaSource, EvalEnumerator, Int](akkaSource)
   }
 
-  println("catsEnumerator = " + io.iteratee.Iteratee.consume[cats.Eval, Int].apply(catsEnumerator).run.value)
+  println("iterateeIoEnumerator = " + io.iteratee.Iteratee.consume[cats.Eval, Int].apply(iterateeIoEnumerator).run.value)
 
   val fs2Stream: fs2.Stream[fs2.Task, Int] = {
     import streamadapter._
-    import streamadapter.cats._
+    import streamadapter.iterateeio._
     import streamadapter.fs2._
-    adapt[EvalEnumerator, FS2Stream, Int](catsEnumerator)
+    adapt[EvalEnumerator, FS2Stream, Int](iterateeIoEnumerator)
   }
 
   println("fs2Stream = " + fs2Stream.runLog.unsafeRun)
