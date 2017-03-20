@@ -95,7 +95,7 @@ $takeThirtyThreeFragment"""
 
   def throwingChunkerator = new ThrowingIGen
 
-  def sameElts = toIterator(adapt(chunkerator)) must beEqualTo(elements)
+  def sameElts = toIterator(adapt(chunkerator)).toList must beEqualTo(elements.toList)
 
   def doesntBlock = {
     val start = DateTime.now.getMillis
@@ -114,7 +114,7 @@ $takeThirtyThreeFragment"""
   }
 
   def threeElts(takeThirtyThree: (P[Int]) => P[Int]) = {
-    toIterator(takeThirtyThree(adapt(chunkerator))) must beEqualTo(elements.take(33))
+    toIterator(takeThirtyThree(adapt(chunkerator))).toList must beEqualTo(elements.take(33).toList)
   }
 
   def closesEarly(takeThirtyThree: (P[Int]) => P[Int]) = {
