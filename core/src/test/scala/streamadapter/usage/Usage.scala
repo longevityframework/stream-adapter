@@ -17,31 +17,31 @@ object Usage extends App {
     println("akkaSource = " + Await.result(akkaSource.toMat(Sink.seq[Int])(Keep.right).run, Duration.Inf))
   }
 
-  val iterateeIoEnumerator: io.iteratee.Enumerator[cats.Eval, Int] = {
-    import streamadapter._
-    import streamadapter.akka._
-    import streamadapter.iterateeio._
-    adapt[AkkaSource, EvalEnumerator, Int](akkaSource)
-  }
-
-  println("iterateeIoEnumerator = " + io.iteratee.Iteratee.consume[cats.Eval, Int].apply(iterateeIoEnumerator).run.value)
-
   val fs2Stream: fs2.Stream[fs2.Task, Int] = {
     import streamadapter._
-    import streamadapter.iterateeio._
+    import streamadapter.akka._
     import streamadapter.fs2._
-    adapt[EvalEnumerator, FS2Stream, Int](iterateeIoEnumerator)
+    adapt[AkkaSource, FS2Stream, Int](akkaSource)
   }
 
   println("fs2Stream = " + fs2Stream.runLog.unsafeRun)
 
-  val playEnumerator: play.api.libs.iteratee.Enumerator[Int] = {
+  val iterateeIoEnumerator: io.iteratee.Enumerator[cats.Eval, Int] = {
     import streamadapter._
     import streamadapter.fs2._
-    import streamadapter.play._
+    import streamadapter.iterateeio._
     implicit val S = _root_.fs2.Strategy.fromFixedDaemonPool(8, threadName = "worker")
+    adapt[FS2Stream, EvalEnumerator, Int](fs2Stream)
+  }
+
+  println("iterateeIoEnumerator = " + io.iteratee.Iteratee.consume[cats.Eval, Int].apply(iterateeIoEnumerator).run.value)
+
+  val playEnumerator: play.api.libs.iteratee.Enumerator[Int] = {
+    import streamadapter._
+    import streamadapter.iterateeio._
+    import streamadapter.play._
     import scala.concurrent.ExecutionContext.Implicits.global
-    adapt[FS2Stream, PlayEnumerator, Int](fs2Stream)
+    adapt[EvalEnumerator, PlayEnumerator, Int](iterateeIoEnumerator)
   }
 
   {
