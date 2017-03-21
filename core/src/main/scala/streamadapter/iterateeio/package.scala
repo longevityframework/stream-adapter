@@ -79,11 +79,13 @@ package object iterateeio {
         var produced = Promise[Option[Seq[E]]]()
 
         // this promise is completed when the consumer consumes the next signal from the producer.
-        // it either results in a signal to keep going (Some(())), or a signal to close (None)
-        var consumed = Promise[Option[Unit]]()
+        var consumed = Promise[Unit]()
+
+        // the consumer sets this flag when its user calls close
+        var closed = false
 
         // at the start, the producer hasn't produced anything yet, and the consumer is waiting
-        consumed.success(Some(()))
+        consumed.success(())
 
         // the consumer
         val iterator = new CloseableChunkIter[E] {
@@ -94,27 +96,29 @@ package object iterateeio {
           def next = {
             val oa = Await.result(produced.future, streamadapter.timeout)
             produced = Promise()
-            consumed.success(Some(()))
+            consumed.success(())
             oa.get
           }
           def close = {
-            consumed = Promise()
-            consumed.success(None)
+            closed = true
+            if (!consumed.isCompleted) consumed.success(())
           }
         }
 
         // the producer
-        val iteratee: Iteratee[F, Vector[E], Unit] = Iteratee.foreach[F, Vector[E]](
-          { es =>
-            val ou = Await.result(consumed.future, streamadapter.timeout)
+        val iteratee: Iteratee[F, Vector[E], Unit] = Iteratee.takeWhile[F, Vector[E]]({ es =>
+          if (!closed) {
+            Await.result(consumed.future, streamadapter.timeout)
             consumed = Promise()
             produced.success(Some(es))
-          }).map({ a =>
-            val ou = Await.result(consumed.future, streamadapter.timeout)
-            consumed = Promise()
+          }
+          !closed
+        }).map({ a =>
+          if (!closed) {
+            Await.result(consumed.future, streamadapter.timeout)
             produced.success(None)
-            a
-          })
+          }
+        })
 
         // QUESTION: i would really prefer to not use a future here, but it seems necessary that i
         // spawn off a second thread in this scenario. I really want to try to limit the

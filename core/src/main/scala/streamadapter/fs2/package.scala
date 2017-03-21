@@ -41,11 +41,13 @@ package object fs2 {
         var produced = Promise[Option[Seq[A]]]()
 
         // this promise is completed when the consumer consumes the next signal from the producer.
-        // it either results in a signal to keep going (Some(())), or a signal to close (None)
-        var consumed = Promise[Option[Unit]]()
+        var consumed = Promise[Unit]()
+
+        // the consumer sets this flag when its user calls close
+        var closed = false
 
         // at the start, the producer hasn't produced anything yet, and the consumer is waiting
-        consumed.success(Some(()))
+        consumed.success(())
 
         // the consumer
         val iterator = new CloseableChunkIter[A] {
@@ -56,12 +58,12 @@ package object fs2 {
           def next = {
             val oa = Await.result(produced.future, streamadapter.timeout)
             produced = Promise()
-            consumed.success(Some(()))
+            consumed.success(())
             oa.get
           }
           def close = {
-            consumed = Promise()
-            consumed.success(None)
+            closed = true
+            if (!consumed.isCompleted) consumed.success(())
           }
         }
 
@@ -78,10 +80,12 @@ package object fs2 {
         Future {
           blocking {
             stream.chunks.takeWhile({ a =>
-              val ou = Await.result(consumed.future, streamadapter.timeout)
-              consumed = Promise()
-              produced.success(Some(a.toVector))
-              ou.nonEmpty
+              if (!closed) {
+                val ou = Await.result(consumed.future, streamadapter.timeout)
+                consumed = Promise()
+                produced.success(Some(a.toVector))
+              }
+              !closed
             }).run.map({ t =>
               val ou = Await.result(consumed.future, streamadapter.timeout)
               consumed = Promise()

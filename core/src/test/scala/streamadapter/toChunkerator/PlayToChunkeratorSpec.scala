@@ -12,22 +12,7 @@ class PlayToChunkeratorSpec extends ToChunkeratorSpec[Enumerator] {
 
   def adapt = playEnumeratorToChunkerator.adapt[Int] _
 
-  def create = (seq: Seq[Int]) => chunkeratorToPlayEnumerator.adapt(Chunkerator.grouped(10, seq))
-
-  def createBlocking = (seq: Seq[Int]) => {
-    def iter = new Iterator[Int] {
-      private val i = seq.toIterator
-      def hasNext = {
-        try Thread.sleep(3000) catch { case t: InterruptedException => }
-        i.hasNext
-      }
-      def next = {
-        try Thread.sleep(3000) catch { case t: InterruptedException => }
-        i.next
-      }
-    }
-    Enumerator.enumerate(iter)
-  }
+  def create = (c: Chunkerator[Int]) => chunkeratorToPlayEnumerator.adapt(c)
 
   def implementsClose = true
 
