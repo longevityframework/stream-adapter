@@ -1,9 +1,12 @@
 package streamadapter
 
+import cats.instances.future._
 import cats.Eval
 import cats.Id
 import cats.Monad
 import cats.Bimonad
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import io.iteratee.Enumerator
 import io.iteratee.Iteratee
 import io.iteratee.internal.Step
@@ -86,25 +89,18 @@ package object iterateeio {
         consumed.success(Some(()))
 
         // the consumer
-        val iterator = new CloseableChunkIter[E] {
-          def hasNext = {
-            val oa = Await.result(produced.future, streamadapter.timeout)
-            oa.nonEmpty
-          }
-          def next = {
-            val oa = Await.result(produced.future, streamadapter.timeout)
+        class FCCI {
+          def hasNext: Future[Boolean] = produced.future.map(_.nonEmpty)
+          def next: Future[Seq[E]] = produced.future.map { es =>
             produced = Promise()
             consumed.success(Some(()))
-            oa.get
+            es.get
           }
-          def close = {
-            consumed = Promise()
-            consumed.success(None)
-          }
+          def close: Future[Unit] = Future.successful(())
         }
 
         // the producer
-        val iteratee: Iteratee[F, Vector[E], Unit] = Iteratee.foreach[F, Vector[E]](
+        val iteratee: Iteratee[Future, Vector[E], Unit] = Iteratee.foreach[Future, Vector[E]](
           { es =>
             val ou = Await.result(consumed.future, streamadapter.timeout)
             consumed = Promise()
@@ -122,12 +118,23 @@ package object iterateeio {
         // seems neither provides a Task. is there a better option that brings in maybe a tiny
         // dependency? i am thinking that i would prefer to use Future over bringing in any extra
         // dependency. what do you think?
-        import scala.concurrent.Future
-        import scala.concurrent.ExecutionContext.Implicits.global
         import scala.concurrent.blocking
+        val i2 = iteratee.mapI[F](
+          new cats.arrow.FunctionK[Future, F] {
+            final def apply[A](fa: Future[A]): F[A] = F.pure(Await.result(fa, streamadapter.timeout))
+          }
+        )
         Future(blocking(
-          F.extract(iteratee(enumerator.grouped(10)).run)
+          F.extract(i2(enumerator.grouped(10)).run)
         ))
+
+        val iterator = new CloseableChunkIter[E] {
+          val fcci = new FCCI
+          def hasNext = Await.result(fcci.hasNext, streamadapter.timeout)
+          def next = Await.result(fcci.next, streamadapter.timeout)
+          def close = Await.result(fcci.close, streamadapter.timeout)
+        }
+
         iterator
       }
     }
