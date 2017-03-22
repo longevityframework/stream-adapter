@@ -126,12 +126,14 @@ package object iterateeio {
         // seems neither provides a Task. is there a better option that brings in maybe a tiny
         // dependency? i am thinking that i would prefer to use Future over bringing in any extra
         // dependency. what do you think?
+
         import scala.concurrent.Future
-        import scala.concurrent.ExecutionContext.Implicits.global
         import scala.concurrent.blocking
+        implicit val ec = streamadapter.fixedPoolExecutionContext(2)
         Future(blocking(
           F.extract(iteratee(enumerator.grouped(10)).run)
         ))
+
         iterator
       }
     }

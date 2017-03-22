@@ -134,8 +134,8 @@ package object play {
           }
         }
 
-        // force a trampoline here to return immediately
-        trampoline(enumerator(iteratee))
+        Future(blocking(enumerator(iteratee)))
+
         iterator
       }
     }

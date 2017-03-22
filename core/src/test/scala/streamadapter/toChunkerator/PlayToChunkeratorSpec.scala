@@ -1,12 +1,13 @@
 package streamadapter.toChunkerator
 
 import _root_.play.api.libs.iteratee.Enumerator
-import scala.concurrent.ExecutionContext.Implicits.global
 import streamadapter.Chunkerator
 import streamadapter.play.chunkeratorToPlayEnumerator
 import streamadapter.play.playEnumeratorToChunkerator
 
 class PlayToChunkeratorSpec extends ToChunkeratorSpec[Enumerator] {
+
+  implicit val ec = streamadapter.fixedPoolExecutionContext(20)
 
   def adapterName = "playEnumeratorToChunkerator"
 

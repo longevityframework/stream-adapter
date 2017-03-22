@@ -1,4 +1,5 @@
 import com.typesafe.config.ConfigFactory
+import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
@@ -33,5 +34,11 @@ package object streamadapter {
     Future(()).flatMap { _ => f }
 
   private[streamadapter] val timeout = Duration(ConfigFactory.load().getString("streamadapter.timeout"))
+
+  private[streamadapter] def fixedPoolExecutionContext(numThreads: Int) = new ExecutionContext {
+    val threadPool = Executors.newFixedThreadPool(numThreads)
+    def execute(runnable: Runnable) = threadPool.submit(runnable)
+    def reportFailure(t: Throwable) = {}
+  }
 
 }

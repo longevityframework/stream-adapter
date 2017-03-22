@@ -75,8 +75,8 @@ package object fs2 {
         // dependency. what do you think?
 
         import scala.concurrent.Future
-        import scala.concurrent.ExecutionContext.Implicits.global
         import scala.concurrent.blocking
+        implicit val ec = streamadapter.fixedPoolExecutionContext(2)
         Future {
           blocking {
             stream.chunks.takeWhile({ a =>

@@ -1,11 +1,12 @@
 package streamadapter.toChunkerator
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import streamadapter.futurevec.chunkeratorToFutureVec
 import streamadapter.futurevec.futureVecToChunkerator
 import streamadapter.futurevec.FutureVec
 
 class FutureVecToChunkeratorSpec extends ToChunkeratorSpec[FutureVec] {
+
+  implicit val ec = streamadapter.fixedPoolExecutionContext(20)
 
   def adapterName = "futureVecToChunkerator"
 
