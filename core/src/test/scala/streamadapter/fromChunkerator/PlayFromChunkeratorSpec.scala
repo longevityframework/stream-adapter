@@ -13,7 +13,7 @@ class PlayFromChunkeratorSpec extends FromChunkeratorSpec[Enumerator] {
 
   def adapt = chunkeratorToPlayEnumerator.adapt
 
-  def toIterator: Enumerator[Int] => Iterator[Int] = { (enumerator) =>
+  def toIterator = { (enumerator) =>
     val iteratee = Iteratee.fold[Int, Vector[Int]](Vector())(_ :+ _)
     val f = enumerator.run(iteratee)
     Await.result(f, streamadapter.timeout).toIterator

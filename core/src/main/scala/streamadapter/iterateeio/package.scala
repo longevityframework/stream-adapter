@@ -133,6 +133,7 @@ package object iterateeio {
         Future(blocking(
           F.extract(iteratee(enumerator.grouped(10)).run)
         ))
+        ec.shutdown
 
         iterator
       }

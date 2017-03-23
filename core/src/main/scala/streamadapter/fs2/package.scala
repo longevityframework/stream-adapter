@@ -94,6 +94,7 @@ package object fs2 {
             }).unsafeRun
           }
         }
+        ec.shutdown
 
         iterator
       }

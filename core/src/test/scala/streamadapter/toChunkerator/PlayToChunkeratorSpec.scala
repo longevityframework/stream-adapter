@@ -1,11 +1,12 @@
 package streamadapter.toChunkerator
 
 import _root_.play.api.libs.iteratee.Enumerator
+import org.specs2.specification.AfterAll
 import streamadapter.Chunkerator
 import streamadapter.play.chunkeratorToPlayEnumerator
 import streamadapter.play.playEnumeratorToChunkerator
 
-class PlayToChunkeratorSpec extends ToChunkeratorSpec[Enumerator] {
+class PlayToChunkeratorSpec extends ToChunkeratorSpec[Enumerator] with AfterAll {
 
   implicit val ec = streamadapter.fixedPoolExecutionContext(20)
 
@@ -16,5 +17,7 @@ class PlayToChunkeratorSpec extends ToChunkeratorSpec[Enumerator] {
   def create = (c: Chunkerator[Int]) => chunkeratorToPlayEnumerator.adapt(c)
 
   def implementsClose = true
+
+  def afterAll = ec.shutdown
 
 }

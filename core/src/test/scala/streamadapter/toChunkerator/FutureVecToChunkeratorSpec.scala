@@ -1,10 +1,11 @@
 package streamadapter.toChunkerator
 
+import org.specs2.specification.AfterAll
 import streamadapter.futurevec.chunkeratorToFutureVec
 import streamadapter.futurevec.futureVecToChunkerator
 import streamadapter.futurevec.FutureVec
 
-class FutureVecToChunkeratorSpec extends ToChunkeratorSpec[FutureVec] {
+class FutureVecToChunkeratorSpec extends ToChunkeratorSpec[FutureVec] with AfterAll {
 
   implicit val ec = streamadapter.fixedPoolExecutionContext(20)
 
@@ -15,5 +16,7 @@ class FutureVecToChunkeratorSpec extends ToChunkeratorSpec[FutureVec] {
   def adapt = futureVecToChunkerator.adapt[Int] _
 
   def implementsClose = false
+
+  def afterAll = ec.shutdown
   
 }

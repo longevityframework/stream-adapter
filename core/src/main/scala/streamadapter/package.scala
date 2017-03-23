@@ -35,10 +35,14 @@ package object streamadapter {
 
   private[streamadapter] val timeout = Duration(ConfigFactory.load().getString("streamadapter.timeout"))
 
-  private[streamadapter] def fixedPoolExecutionContext(numThreads: Int) = new ExecutionContext {
+  private[streamadapter] def fixedPoolExecutionContext(numThreads: Int) =
+    new FixedPoolExecutionContext(numThreads)
+
+  private[streamadapter] class FixedPoolExecutionContext(numThreads: Int) extends ExecutionContext {
     val threadPool = Executors.newFixedThreadPool(numThreads)
     def execute(runnable: Runnable) = threadPool.submit(runnable)
     def reportFailure(t: Throwable) = {}
+    def shutdown = threadPool.shutdown
   }
 
 }

@@ -17,7 +17,7 @@ class FutureVecFromChunkeratorSpec extends FromChunkeratorSpec[FutureVecFromChun
 
   def adapt = chunkeratorToFutureVec.adapt[Int] _
 
-  def toIterator: Future[Vector[Int]] => Iterator[Int] = (fs) => Await.result(fs, streamadapter.timeout).toIterator
+  def toIterator = (fs) => Await.result(fs, streamadapter.timeout).toIterator
 
   // no way to take three here, unless we change toFutureVec to take eg an until: A => Boolean
   def takeThirtyThreeOpt = None
