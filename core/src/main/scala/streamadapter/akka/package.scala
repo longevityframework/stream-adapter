@@ -29,8 +29,8 @@ package object akka {
   /** produces a publisher adapter from akka source to chunkerator */
   implicit def akkaSourceToChunkerator(implicit materializer: ActorMaterializer) = {
     new StreamAdapter[AkkaSource, Chunkerator] {
-      def adapt[A](source: Source[A, NotUsed]): Chunkerator[A] = { () =>
-        new CloseableChunkIter[A] {
+      def adapt[A](source: Source[A, NotUsed]): Chunkerator[A] = new Chunkerator[A] {
+        def apply = new CloseableChunkIter[A] {
           private lazy val queue = source.grouped(10).toMat(Sink.queue())(Keep.right).run()
           private var closed = false
           private var pull: Future[Option[Seq[A]]] = _

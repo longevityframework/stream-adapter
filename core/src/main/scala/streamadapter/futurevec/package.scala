@@ -25,8 +25,8 @@ package object futurevec {
   /** produces a publisher adapter from future vector to chunkerator */
   implicit def futureVecToChunkerator(implicit context: ExecutionContext) = {
     new StreamAdapter[FutureVec, Chunkerator] {
-      def adapt[A](futureVec: Future[Vector[A]]): Chunkerator[A] = { () =>
-        new CloseableChunkIter[A] {
+      def adapt[A](futureVec: Future[Vector[A]]): Chunkerator[A] = new Chunkerator[A] {
+        def apply = new CloseableChunkIter[A] {
           private lazy val as = Await.result(futureVec, streamadapter.timeout)
           private var done = false
           def hasNext = !done

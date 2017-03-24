@@ -62,81 +62,83 @@ package object play {
   /** produces a publisher adapter from akka source to chunkerator */
   implicit def playEnumeratorToChunkerator(implicit context: ExecutionContext) = {
     new StreamAdapter[Enumerator, Chunkerator] {
-      def adapt[A](enumerator: Enumerator[A]): Chunkerator[A] = { () =>
+      def adapt[A](enumerator: Enumerator[A]): Chunkerator[A] = new Chunkerator[A] {
+        def apply = {
 
-        // this promise is completed when the producer takes an action. it either results in the next
-        // value (Some(a)), or it signals completion with None
-        var produced = Promise[Option[Vector[A]]]()
+          // this promise is completed when the producer takes an action. it either results in the next
+          // value (Some(a)), or it signals completion with None
+          var produced = Promise[Option[Vector[A]]]()
 
-        // this promise is completed when the consumer consumes the next signal from the producer.
-        var consumed = Promise[Unit]()
+          // this promise is completed when the consumer consumes the next signal from the producer.
+          var consumed = Promise[Unit]()
 
-        // the consumer sets this flag when its user calls close
-        var closed = false
+          // the consumer sets this flag when its user calls close
+          var closed = false
 
-        // at the start, the producer hasn't produced anything yet, and the consumer is waiting
-        consumed.success(())
+          // at the start, the producer hasn't produced anything yet, and the consumer is waiting
+          consumed.success(())
 
-        // the consumer
-        val iterator = new CloseableChunkIter[A] {
-          def hasNext = {
-            val oa = Await.result(produced.future, streamadapter.timeout)
-            oa.nonEmpty
-          }
-          def next = {
-            val oa = Await.result(produced.future, streamadapter.timeout)
-            produced = Promise()
-            consumed.success(())
-            oa.get
-          }
-          def close = {
-            closed = true
-            if (!consumed.isCompleted) consumed.success(())
-          }
-        }
-
-
-        // the producer
-        val iteratee = new Iteratee[A, Unit] {
-          def done = Done[Unit, A]((), Input.EOF).it
-          def fold[B](folder: Step[A, Unit] => Future[B])(implicit ec: ExecutionContext): Future[B] = {
-            folder {
-              Step.Cont {
-                case Input.EOF =>
-                  if (!closed) {
-                    Await.result(consumed.future, streamadapter.timeout)
-                    consumed = Promise()
-                    produced.success(None)
-                  }
-                  done
-                case Input.Empty =>
-                  if (closed) done else this
-                case Input.El(a) =>
-                  if (closed) {
-                    done
-                  } else {
-                    Await.result(consumed.future, streamadapter.timeout)
-                    consumed = Promise()
-                    produced.success(Some(Vector(a)))
-                    this
-                  }
-                }
+          // the consumer
+          val iterator = new CloseableChunkIter[A] {
+            def hasNext = {
+              val oa = Await.result(produced.future, streamadapter.timeout)
+              oa.nonEmpty
+            }
+            def next = {
+              val oa = Await.result(produced.future, streamadapter.timeout)
+              produced = Promise()
+              consumed.success(())
+              oa.get
+            }
+            def close = {
+              closed = true
+              if (!consumed.isCompleted) consumed.success(())
             }
           }
 
-          def folder(step: Step[A, Unit]): Future[Unit] = step match {
-            case Step.Done(a, _) => Future.successful(a)
-            case Step.Cont(k) => k(Input.EOF).fold({
+
+          // the producer
+          val iteratee = new Iteratee[A, Unit] {
+            def done = Done[Unit, A]((), Input.EOF).it
+            def fold[B](folder: Step[A, Unit] => Future[B])(implicit ec: ExecutionContext): Future[B] = {
+              folder {
+                Step.Cont {
+                  case Input.EOF =>
+                    if (!closed) {
+                      Await.result(consumed.future, streamadapter.timeout)
+                      consumed = Promise()
+                      produced.success(None)
+                    }
+                    done
+                  case Input.Empty =>
+                    if (closed) done else this
+                  case Input.El(a) =>
+                    if (closed) {
+                      done
+                    } else {
+                      Await.result(consumed.future, streamadapter.timeout)
+                      consumed = Promise()
+                      produced.success(Some(Vector(a)))
+                      this
+                    }
+                }
+              }
+            }
+
+            def folder(step: Step[A, Unit]): Future[Unit] = step match {
               case Step.Done(a, _) => Future.successful(a)
-              case _ => throw new Exception("Erroneous or diverging iteratee")
-            })
-            case _ => throw new Exception("Erroneous iteratee")
+              case Step.Cont(k) => k(Input.EOF).fold({
+                case Step.Done(a, _) => Future.successful(a)
+                case _ => throw new Exception("Erroneous or diverging iteratee")
+              })
+              case _ => throw new Exception("Erroneous iteratee")
+            }
           }
+
+          Future(blocking(enumerator(iteratee)))
+
+          iterator
         }
-
-        Future(blocking(enumerator(iteratee)))
-
-        iterator
       }
     }
   }
