@@ -27,10 +27,10 @@ object Usage extends App {
   println("fs2Stream = " + fs2Stream.runLog.unsafeRun)
 
   val iterateeIoEnumerator: io.iteratee.Enumerator[cats.Eval, Int] = {
+    implicit val S = fs2.Strategy.fromFixedDaemonPool(8, threadName = "worker")
     import streamadapter._
     import streamadapter.fs2._
     import streamadapter.iterateeio._
-    implicit val S = _root_.fs2.Strategy.fromFixedDaemonPool(8, threadName = "worker")
     adapt[FS2Stream, EvalEnumerator, Int](fs2Stream)
   }
 
