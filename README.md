@@ -125,3 +125,18 @@ created GitHub issues to keep track of all the ideas I've come up with. Rather t
 here, I'll ask you to browse the issues yourself:
 
 - [https://github.com/longevityframework/stream-adapter/issues](https://github.com/longevityframework/stream-adapter/issues)
+
+## Usage
+
+We provide artifacts for Scala 2.11 and 2.12. We don't have 2.10 artifacts because there is not a
+full suite of 2.10 artifacts for the four streaming libraries.
+
+```scala
+libraryDependencies += "org.longevityframework" %% "unblocking" % "0.0.0"
+```
+
+## License
+
+It's [Apache 2](http://www.apache.org/licenses/). I don't really have any reasons to pick a
+different license than this seemingly de-facto open source license. If you have some good reasons
+why this project should be released under a different license, please let me know.
