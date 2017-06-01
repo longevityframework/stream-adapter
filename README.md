@@ -132,7 +132,21 @@ We provide artifacts for Scala 2.11 and 2.12. We don't have 2.10 artifacts becau
 full suite of 2.10 artifacts for the four streaming libraries.
 
 ```scala
-libraryDependencies += "org.longevityframework" %% "unblocking" % "0.0.0"
+libraryDependencies += "org.longevityframework" %% "streamadapter" % "0.1.0"
+```
+
+All the underlying streaming libraries are included here as optional dependencies, so you will need
+to bring in the libraries you want in your own project. Examples:
+
+```scala
+libraryDependencies += "com.typesafe.akka" %% "akka-stream" % "2.5.2"
+
+libraryDependencies += "co.fs2" %% "fs2-core" % "0.9.6"
+
+libraryDependencies += "org.typelevel" %% "cats" % "0.9.0"
+libraryDependencies += "io.iteratee" %% "iteratee-core" % "0.12.0"
+
+libraryDependencies += "com.typesafe.play" %% "play-iteratees" % "2.6.1"
 ```
 
 ## License
