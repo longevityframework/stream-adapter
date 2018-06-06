@@ -17,17 +17,17 @@ object Usage extends App {
     println("akkaSource = " + Await.result(akkaSource.toMat(Sink.seq[Int])(Keep.right).run, Duration.Inf))
   }
 
-  val fs2Stream: fs2.Stream[fs2.Task, Int] = {
+  val fs2Stream: fs2.Stream[cats.effect.IO, Int] = {
     import streamadapter._
     import streamadapter.akka._
     import streamadapter.fs2._
     adapt[AkkaSource, FS2Stream, Int](akkaSource)
   }
 
-  println("fs2Stream = " + fs2Stream.runLog.unsafeRun)
+  println("fs2Stream = " + fs2Stream.compile.toVector.unsafeRunSync)
 
   val iterateeIoEnumerator: io.iteratee.Enumerator[cats.Eval, Int] = {
-    implicit val S = fs2.Strategy.fromFixedDaemonPool(8, threadName = "worker")
+    import scala.concurrent.ExecutionContext.Implicits.global
     import streamadapter._
     import streamadapter.fs2._
     import streamadapter.iterateeio._

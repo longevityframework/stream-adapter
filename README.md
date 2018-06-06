@@ -28,7 +28,7 @@ val akkaSource = Source(0.until(10))
 We can convert this to an `fs2.Stream` like so:
 
 ```scala
-val fs2Stream: fs2.Stream[fs2.Task, Int] = {
+val fs2Stream: fs2.Stream[cats.effect.IO, Int] = {
   import streamadapter._
   import streamadapter.akka._
   import streamadapter.fs2._
@@ -46,7 +46,7 @@ Let's now convert that FS2 stream into an `io.iteratee.Enumerator`:
 
 ```scala
 val iterateeIoEnumerator: io.iteratee.Enumerator[cats.Eval, Int] = {
-  implicit val S = fs2.Strategy.fromFixedDaemonPool(8, threadName = "worker")
+  import scala.concurrent.ExecutionContext.Implicits.global
   import streamadapter._
   import streamadapter.fs2._
   import streamadapter.iterateeio._

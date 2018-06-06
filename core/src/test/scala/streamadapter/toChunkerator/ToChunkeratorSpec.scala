@@ -54,12 +54,11 @@ $closesEarlyFragment"""
     iter.next
     iter.close
 
-    try Thread.sleep(3000) catch { case t: java.lang.InterruptedException => }
+    try Thread.sleep(10000) catch { case t: java.lang.InterruptedException => }
 
     // allow for a certain amount of buffering
     { track.viewCounts.keys.max must be_>=(0) and be_<=(50)
     } and {
-      // TODO this should pass!
       track.closedIndexes.size must beEqualTo(1)
     } and {
       track.closedIndexes(0) must be_<=(50)

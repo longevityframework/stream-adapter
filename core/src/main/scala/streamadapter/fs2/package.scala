@@ -1,41 +1,39 @@
 package streamadapter
 
-import _root_.fs2.Strategy
 import _root_.fs2.Stream
-import _root_.fs2.Task
+import cats.effect.IO
 import scala.concurrent.Await
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Promise
 
 /** contains [[StreamAdapter stream adapters]] for FS2 streams */
 package object fs2 {
 
-  /** an FS2 stream bound to a `Task` effect */
-  type FS2Stream[A] = Stream[Task, A]
+  /** an FS2 stream bound to a `IO` effect */
+  type FS2Stream[A] = Stream[IO, A]
 
   /** produces a publisher adapter from chunkerator to FS2 stream */
   implicit def chunkeratorToFS2Stream = {
     new StreamAdapter[Chunkerator, FS2Stream] {
-      def adapt[A](chunkerator: Chunkerator[A]): Stream[Task, A] = {
-        def iterToStream(i: CloseableChunkIter[A]): Stream[Task, A] = {
+      def adapt[A](chunkerator: Chunkerator[A]): Stream[IO, A] = {
+        def iterToStream(i: CloseableChunkIter[A]): Stream[IO, A] = {
           if (i.hasNext) {
             Stream.emits(i.next) ++ iterToStream(i)
           } else {
-            Stream.empty[Task, A]
+            Stream.empty
           }
         }
-        Stream.bracket[Task, CloseableChunkIter[A], A](
-          Task.delay(chunkerator()))(
-          iterToStream,
-          i => Task.now(i.close))
+        Stream.bracket[IO, CloseableChunkIter[A], A](
+          IO(chunkerator()))(iterToStream, i => IO.pure(i.close))
       }
     }
   }
 
   // see https://github.com/longevityframework/stream-adapter/issues/4
   /** produces a publisher adapter from FS2 stream to chunkerator */
-  implicit def fs2StreamToChunkerator(implicit S: Strategy) = {
+  implicit def fs2StreamToChunkerator(implicit context: ExecutionContext) = {
     new StreamAdapter[FS2Stream, Chunkerator] {
-      def adapt[A](stream: Stream[Task, A]): Chunkerator[A] = new Chunkerator[A] {
+      def adapt[A](stream: Stream[IO, A]): Chunkerator[A] = new Chunkerator[A] {
         def apply = {
 
           // this promise is completed when the producer takes an action. it either results in the next
@@ -81,12 +79,12 @@ package object fs2 {
                   produced.success(Some(a.toVector))
                 }
                 !closed
-              }).run.map({ t =>
+              }).compile.drain.map({ t =>
                 val ou = Await.result(consumed.future, streamadapter.timeout)
                 consumed = Promise()
                 produced.success(None)
                 t
-              }).unsafeRun
+              }).unsafeRunSync
             }
           }
           ec.shutdown
